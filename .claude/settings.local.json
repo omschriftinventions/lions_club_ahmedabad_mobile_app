@@ -53,7 +53,12 @@
       "Bash(curl -s --max-time 2 http://localhost:4040/api/tunnels)",
       "Bash(curl -s -H \"ngrok-skip-browser-warning: true\" -X POST https://8d81-2405-201-202b-b8c5-f907-6bd9-4461-8b78.ngrok-free.app/auth/otp/verify -H \"Content-Type: application/json\" -d '{\"phone\":\"9825012345\",\"code\":\"000000\"}')",
       "Bash(npx eas-cli@latest --version)",
-      "Bash(npx eas-cli@latest whoami)"
+      "Bash(npx eas-cli@latest whoami)",
+      "Bash(npx eas-cli@latest build --platform android --profile preview --non-interactive --no-wait)",
+      "Bash(npx eas-cli@latest build:view ce242975-7a37-4d7b-87dd-a847d5e1fc4b)",
+      "WebFetch(domain:omsinv.com)",
+      "Bash(curl -sL -o omsinv-logo.jpeg \"https://omsinv.com/Full_Logo.jpeg\")",
+      "Bash(powershell -Command \"[Convert]::ToBase64String\\([IO.File]::ReadAllBytes\\('omsinv-logo.jpeg'\\)\\)\")"
     ]
   }
 }
