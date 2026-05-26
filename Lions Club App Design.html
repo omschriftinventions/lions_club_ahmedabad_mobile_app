@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Lions Club Ahmedabad — Mobile App Design</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    html, body { margin: 0; padding: 0; background: #f0eee9; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+    @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+    /* Style override block */
+  </style>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- Library scripts: Design Canvas + iOS frame -->
+  <script type="text/babel" src="design-canvas.jsx"></script>
+  <script type="text/babel" src="ios-frame.jsx"></script>
+
+  <!-- Lions Club app: tokens, data, components, screen sets -->
+  <script type="text/babel" src="screens/tokens.jsx"></script>
+  <script type="text/babel" src="screens/data.jsx"></script>
+  <script type="text/babel" src="screens/components.jsx"></script>
+  <script type="text/babel" src="screens/auth.jsx"></script>
+  <script type="text/babel" src="screens/main.jsx"></script>
+  <script type="text/babel" src="screens/events.jsx"></script>
+  <script type="text/babel" src="screens/extras.jsx"></script>
+  <script type="text/babel" src="screens/extras2.jsx"></script>
+  <script type="text/babel" src="screens/profile-edit.jsx"></script>
+  <script type="text/babel" src="screens/service-content.jsx"></script>
+  <script type="text/babel" src="screens/comms-states.jsx"></script>
+  <script type="text/babel" src="screens/officer.jsx"></script>
+  <script type="text/babel" src="screens/info.jsx"></script>
+  <script type="text/babel" src="screens/specs.jsx"></script>
+
+  <script type="text/babel">
+    const T = window.LC;
+    const PW = 402, PH = 874;   // iPhone 15 Pro
+    const SW = 880, SH = 1240;  // Spec sheet portrait
+
+    // Helper: wrap screen in iOS device frame
+    const Phone = ({ children, dark }) => (
+      <IOSDevice width={PW} height={PH} dark={dark}>{children}</IOSDevice>
+    );
+
+    function App() {
+      return (
+        <DesignCanvas>
+
+          {/* ──────────────────────────────────────────────── */}
+          {/* 0 · Cover / project intro                          */}
+          {/* ──────────────────────────────────────────────── */}
+          <DCSection id="cover" title="Lions Club Ahmedabad — Mobile App"
+            subtitle="React Native design handoff · 41 screens across 10 sections · iOS frames at native size · Pan to explore, click any artboard to focus">
+            <DCArtboard id="brief" label="Project brief" width={SW} height={SH}>
+              <div style={{
+                width: '100%', height: '100%',
+                background: `linear-gradient(160deg, ${T.brandBlueDeep} 0%, ${T.brandBlue} 100%)`,
+                padding: 64, color: '#fff', position: 'relative', overflow: 'hidden',
+                fontFamily: T.font, boxSizing: 'border-box',
+              }}>
+                {/* Gold rays */}
+                <svg width="700" height="700" viewBox="0 0 700 700" style={{ position: 'absolute', top: -200, right: -200, opacity: 0.08 }}>
+                  {Array.from({ length: 30 }).map((_, i) => (
+                    <line key={i} x1="350" y1="350" x2="350" y2="20" stroke={T.brandGold} strokeWidth="3" transform={`rotate(${i*12} 350 350)`}/>
+                  ))}
+                </svg>
+                <div style={{ position: 'relative' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+                    <div style={{
+                      width: 90, height: 90, borderRadius: '50%', background: '#fff',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      boxShadow: '0 14px 30px rgba(0,0,0,0.3)',
+                    }}>
+                      <img src="assets/LionsClubLogo.png" width="78" height="78" style={{ objectFit: 'contain' }}/>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 12, color: T.brandGold, fontWeight: 700, letterSpacing: 3 }}>DISTRICT 323-H</div>
+                      <div style={{ fontSize: 16, fontWeight: 600, letterSpacing: 2, marginTop: 4, opacity: 0.85 }}>AHMEDABAD CLUB</div>
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: 80 }}>
+                    <div style={{ color: T.brandGold, fontSize: 14, fontWeight: 700, letterSpacing: 3 }}>MOBILE APP · v1.0</div>
+                    <div style={{ fontSize: 68, fontWeight: 800, fontFamily: T.fontDsp, letterSpacing: -2, lineHeight: 1.05, marginTop: 16 }}>
+                      We Serve.<br/>
+                      <span style={{ color: T.brandGold }}>In your pocket.</span>
+                    </div>
+                    <div style={{ fontSize: 18, color: 'rgba(255,255,255,0.8)', marginTop: 24, lineHeight: 1.6, maxWidth: 620 }}>
+                      A member directory, event hub and service-impact tracker for Lions Club Ahmedabad —
+                      designed end-to-end for a React Native build, ready to hand to Claude Code.
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginTop: 64 }}>
+                    {[
+                      { k: '41', v: 'screens designed' },
+                      { k: '10', v: 'feature areas' },
+                      { k: '32', v: 'components specified' },
+                      { k: '17', v: 'API endpoints mapped' },
+                    ].map(s => (
+                      <div key={s.v} style={{ padding: '18px 14px', background: 'rgba(255,255,255,0.08)', borderRadius: 14, border: '1px solid rgba(255,255,255,0.12)' }}>
+                        <div style={{ fontSize: 38, fontWeight: 800, color: T.brandGold, fontFamily: T.fontDsp, lineHeight: 1 }}>{s.k}</div>
+                        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 8, letterSpacing: 0.3 }}>{s.v}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 80 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                      <div style={{ width: 38, height: 1, background: T.brandGold }}/>
+                      <div style={{ fontSize: 11, letterSpacing: 4, color: T.brandGold, fontStyle: 'italic', fontFamily: T.fontDsp }}>HANDOFF READY</div>
+                    </div>
+                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', letterSpacing: 1 }}>Pan / pinch · Click any artboard to focus →</div>
+                  </div>
+                </div>
+              </div>
+            </DCArtboard>
+            <DCArtboard id="readme" label="README — Build spec" width={SW} height={SH}>
+              <SpecReadme/>
+            </DCArtboard>
+          </DCSection>
+
+          {/* ──────────────────────────────────────────────── */}
+          {/* 1 · Auth flow                                      */}
+          {/* ──────────────────────────────────────────────── */}
+          <DCSection id="auth" title="01 · Authentication & Onboarding"
+            subtitle="Splash → Login → OTP → 3-step Onboarding for first-time users. Forgot/Reset password handled inline. Session valid 24h.">
+            <DCArtboard id="splash" label="Splash" width={PW} height={PH}>
+              <Phone dark><SplashScreen/></Phone>
+            </DCArtboard>
+            <DCArtboard id="login" label="Login" width={PW} height={PH}>
+              <Phone><LoginScreen/></Phone>
+            </DCArtboard>
+            <DCArtboard id="otp" label="OTP verification" width={PW} height={PH}>
+              <Phone><OtpScreen/></Phone>
+            </DCArtboard>
+            <DCArtboard id="forgot" label="Forgot password" width={PW} height={PH}>
+              <Phone><ForgotPasswordScreen/></Phone>
+            </DCArtboard>
+            <DCArtboard id="reset" label="Reset password" width={PW} height={PH}>
+              <Phone><ResetPasswordScreen/></Phone>
+            </DCArtboard>
+            <DCArtboard id="onb-1" label="Onboarding · 1 of 3 — Roster" width={PW} height={PH}>
+              <Phone><OnboardingScreen/></Phone>
+            </DCArtboard>
+            <DCArtboard id="onb-2" label="Onboarding · 2 of 3 — Events" width={PW} height={PH}>
+              <Phone><OnboardingEventsScreen/></Phone>
+            </DCArtboard>
+            <DCArtboard id="onb-3" label="Onboarding · 3 of 3 — Permissions" width={PW} height={PH}>
+              <Phone><OnboardingPermissionsScreen/></Phone>
+            </DCArtboard>
+          </DCSection>
+
+          {/* ──────────────────────────────────────────────── */}
+          {/* 2 · Home & navigation                             */}
+          {/* ──────────────────────────────────────────────── */}
+          <DCSection id="home" title="02 · Home & Navigation"
+            subtitle="Dashboard greets the member, surfaces next event, today's birthdays/anniversaries, club news, service impact. Side drawer is the global menu. Settings reachable from menu and profile.">
+            <DCArtboard id="home" label="Home — Dashboard" width={PW} height={PH}>
+              <Phone><HomeScreen/></Phone>
+            </DCArtboard>
+            <DCArtboard id="menu" label="Side menu (drawer)" width={PW} height={PH}>
+              <Phone><MenuScreen/></Phone>
+            </DCArtboard>
+            <DCArtboard id="notifications" label="Notifications" width={PW} height={PH}>
+              <Phone><NotificationsScreen/></Phone>
+            </DCArtboard>
+            <DCArtboard id="settings" label="Settings" width={PW} height={PH}>
+              <Phone><SettingsScreen/></Phone>
+            </DCArtboard>
+          </DCSection>
+
+          {/* ──────────────────────────────────────────────── */}
+          {/* 3 · Roster / Members                              */}
+          {/* ──────────────────────────────────────────────── */}
+          <DCSection id="roster" title="03 · Roster & Members"
+            subtitle="Officers strip up top · alphabetical list with letter-index · Find Member is advanced search by profession/area/role. Member detail has call, WhatsApp, email, locate.">
+            <DCArtboard id="roster" label="Roster — main" width={PW} height={PH}>
+              <Phone><RosterScreen/></Phone>
+            </DCArtboard>
+            <DCArtboard id="find" label="Find member — search & filters" width={PW} height={PH}>
+              <Phone><FindMemberScreen/></Phone>
+            </DCArtboard>
+            <DCArtboard id="empty-search" label="Empty state — no results" width={PW} height={PH}>
+              <Phone><EmptyStateScreen/></Phone>
+            </DCArtboard>
+            <DCArtboard id="member-detail" label="Member detail" width={PW} height={PH}>
+              <Phone><MemberDetailScreen/></Phone>
+            </DCArtboard>
+          </DCSection>
+
+          {/* ──────────────────────────────────────────────── */}
+          {/* 4 · Events                                        */}
+          {/* ──────────────────────────────────────────────── */}
+          <DCSection id="events" title="04 · Events & Invitations"
+            subtitle="Tabbed list, event detail with RSVP, premium digital invitation, past-event recap with impact numbers, and officer-only event creation form.">
+            <DCArtboard id="events-list" label="Events — list" width={PW} height={PH}>
+              <Phone><EventsScreen/></Phone>
+            </DCArtboard>
+            <DCArtboard id="event-detail" label="Event detail — RSVP" width={PW} height={PH}>
+              <Phone><EventDetailScreen/></Phone>
+            </DCArtboard>
+            <DCArtboard id="invite" label="Charter Night digital invite" width={PW} height={PH}>
+              <Phone dark><CharterInviteScreen/></Phone>
+            </DCArtboard>
+            <DCArtboard id="past-recap" label="Past event recap with impact" width={PW} height={PH}>
+              <Phone><PastEventRecapScreen/></Phone>
+            </DCArtboard>
+            <DCArtboard id="create-event" label="Create event (officer)" width={PW} height={PH}>
+              <Phone><CreateEventScreen/></Phone>
+            </DCArtboard>
+          </DCSection>
+
+          {/* ──────────────────────────────────────────────── */}
+          {/* Club operations — Meeting minutes, Awards         */}
+          {/* ──────────────────────────────────────────────── */}
+          <DCSection id="ops" title="05 · Club Operations & Recognition"
+            subtitle="Officers'-eye-view: meeting minutes archive, attendance marking, member induction, broadcast messages, roster admin with approvals — plus the Hall of Honour award wall.">
+            <DCArtboard id="minutes" label="Meeting minutes archive" width={PW} height={PH}>
+              <Phone><MeetingMinutesScreen/></Phone>
+            </DCArtboard>
+            <DCArtboard id="attendance" label="Attendance marking (officer)" width={PW} height={PH}>
+              <Phone><AttendanceScreen/></Phone>
+            </DCArtboard>
+            <DCArtboard id="add-member" label="Induct new Lion (officer)" width={PW} height={PH}>
+              <Phone><AddMemberScreen/></Phone>
+            </DCArtboard>
+            <DCArtboard id="broadcast" label="Broadcast to club (officer)" width={PW} height={PH}>
+              <Phone><BroadcastScreen/></Phone>
+            </DCArtboard>
+            <DCArtboard id="roster-admin" label="Roster admin dashboard" width={PW} height={PH}>
+              <Phone><RosterAdminScreen/></Phone>
+            </DCArtboard>
+            <DCArtboard id="awards" label="Awards wall — Hall of Honour" width={PW} height={PH}>
+              <Phone><AwardsWallScreen/></Phone>
+            </DCArtboard>
+          </DCSection>
+
+          {/* ──────────────────────────────────────────────── */}
+          {/* 5 · Service & Causes                              */}
+          {/* ──────────────────────────────────────────────── */}
+          <DCSection id="serve" title="06 · Causes & Service"
+            subtitle="The 'We Serve' part of the brand. Causes dashboard, project deep-dive with timeline & donations, hours-logging form, and the business directory.">
+            <DCArtboard id="causes" label="Causes — impact dashboard" width={PW} height={PH}>
+              <Phone><CausesScreen/></Phone>
+            </DCArtboard>
+            <DCArtboard id="project" label="Project detail — Vision First" width={PW} height={PH}>
+              <Phone><ProjectDetailScreen/></Phone>
+            </DCArtboard>
+            <DCArtboard id="service-log" label="Log service hours" width={PW} height={PH}>
+              <Phone><ServiceLogScreen/></Phone>
+            </DCArtboard>
+            <DCArtboard id="biz" label="Business directory" width={PW} height={PH}>
+              <Phone><BusinessDirectoryScreen/></Phone>
+            </DCArtboard>
+          </DCSection>
+
+          {/* 7 · Community */}
+          <DCSection id="community" title="07 · Community & Information"
+            subtitle="The cultural backbone — About the club, Help & FAQ, Refer a Lion to grow the pride, District news beyond Ahmedabad, and photo memories from past events.">
+            <DCArtboard id="about" label="About — Mission & pledge" width={PW} height={PH}>
+              <Phone><AboutScreen/></Phone>
+            </DCArtboard>
+            <DCArtboard id="help" label="Help & FAQ" width={PW} height={PH}>
+              <Phone><HelpFAQScreen/></Phone>
+            </DCArtboard>
+            <DCArtboard id="refer" label="Refer a Lion" width={PW} height={PH}>
+              <Phone><ReferLionScreen/></Phone>
+            </DCArtboard>
+            <DCArtboard id="district" label="District news feed" width={PW} height={PH}>
+              <Phone><DistrictNewsScreen/></Phone>
+            </DCArtboard>
+            <DCArtboard id="gallery" label="Photo gallery — memories" width={PW} height={PH}>
+              <Phone dark><PhotoGalleryScreen/></Phone>
+            </DCArtboard>
+          </DCSection>
+
+          {/* 8 · Communication */}
+          <DCSection id="chat" title="08 · Messaging & System States"
+            subtitle="1:1 DMs and broadcast channels between members. Plus how the app behaves when the network fails.">
+            <DCArtboard id="chat-list" label="Chat list — DMs & channels" width={PW} height={PH}>
+              <Phone><ChatListScreen/></Phone>
+            </DCArtboard>
+            <DCArtboard id="chat-thread" label="Chat thread (DM with Secretary)" width={PW} height={PH}>
+              <Phone><ChatThreadScreen/></Phone>
+            </DCArtboard>
+            <DCArtboard id="error" label="Error state — offline" width={PW} height={PH}>
+              <Phone><ErrorStateScreen/></Phone>
+            </DCArtboard>
+          </DCSection>
+
+          {/* ──────────────────────────────────────────────── */}
+          {/* 6 · Profile                                       */}
+          {/* ──────────────────────────────────────────────── */}
+          <DCSection id="profile" title="09 · My Profile"
+            subtitle="Digital member ID card (QR), personal service stats, full edit-profile form with photo upload.">
+            <DCArtboard id="profile" label="My Profile" width={PW} height={PH}>
+              <Phone><ProfileScreen/></Phone>
+            </DCArtboard>
+            <DCArtboard id="edit-profile" label="Edit profile" width={PW} height={PH}>
+              <Phone><EditProfileScreen/></Phone>
+            </DCArtboard>
+          </DCSection>
+
+          {/* ──────────────────────────────────────────────── */}
+          {/* 7 · Developer handoff sheets                      */}
+          {/* ──────────────────────────────────────────────── */}
+          <DCSection id="spec" title="10 · Developer Handoff"
+            subtitle="Hand these three sheets, plus this canvas, to Claude Code. Together they are everything needed to build the React Native app.">
+            <DCArtboard id="tokens" label="Design Tokens — RN-ready" width={SW} height={SH}>
+              <SpecTokens/>
+            </DCArtboard>
+            <DCArtboard id="components" label="Components & API contracts" width={SW} height={SH}>
+              <SpecComponents/>
+            </DCArtboard>
+          </DCSection>
+
+        </DesignCanvas>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+  </script>
+</body>
+</html>

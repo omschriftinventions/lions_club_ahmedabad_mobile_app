@@ -1,0 +1,37 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: lionsclub_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpass}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-lionsclub}
+      MYSQL_USER: ${MYSQL_USER:-lions}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-lionspass}
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - lionsclub_mysql_data:/var/lib/mysql
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./db/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-rootpass}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  adminer:
+    image: adminer:latest
+    container_name: lionsclub_adminer
+    restart: unless-stopped
+    ports:
+      - "${ADMINER_PORT:-8090}:8080"
+    depends_on:
+      - mysql
+
+volumes:
+  lionsclub_mysql_data:
