@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 import { useAuth } from './auth';
 
-const API_BASE = (Constants.expoConfig?.extra as any)?.apiBaseUrl ?? 'http://localhost:4000';
+const API_BASE = (process.env as any).EXPO_PUBLIC_API_URL || (Constants.expoConfig?.extra as any)?.apiBaseUrl || 'http://localhost:4000';
 
 export interface ApiError extends Error { status: number; code?: string; }
 

@@ -5,7 +5,7 @@ import { getItem, setItem, deleteItem } from './storage';
 const KEY_ACCESS = 'lc.access';
 const KEY_REFRESH = 'lc.refresh';
 const KEY_MEMBER = 'lc.member';
-const API_BASE = (Constants.expoConfig?.extra as any)?.apiBaseUrl ?? 'http://localhost:4000';
+const API_BASE = (process.env as any).EXPO_PUBLIC_API_URL || (Constants.expoConfig?.extra as any)?.apiBaseUrl || 'http://localhost:4000';
 
 export interface AuthMember {
   id: number;

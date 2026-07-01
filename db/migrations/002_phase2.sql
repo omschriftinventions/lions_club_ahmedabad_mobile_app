@@ -142,9 +142,9 @@ CREATE TABLE IF NOT EXISTS photos (
 -- news.scope ('club' | 'district') — extend existing news instead of new table
 -- ─────────────────────────────────────────────────────────────
 ALTER TABLE news
-  ADD COLUMN IF NOT EXISTS scope ENUM('club','district') NOT NULL DEFAULT 'club' AFTER published_at;
+  ADD COLUMN scope ENUM('club','district') NOT NULL DEFAULT 'club' AFTER published_at;
 
-CREATE INDEX IF NOT EXISTS idx_news_scope ON news(club_id, scope, published_at);
+CREATE INDEX idx_news_scope ON news(club_id, scope, published_at);
 
 SET FOREIGN_KEY_CHECKS = 1;
 
