@@ -11,7 +11,7 @@ export default function ManageRoster() {
   const nav = useNavigate();
   const qc = useQueryClient();
   const { member } = useAuth();
-  const [pwFor, setPwFor] = useState<any | null>(null);
+  const [manageFor, setManageFor] = useState<any | null>(null);
 
   const { data, isLoading } = useQuery({ queryKey: ['roster', 'all'], queryFn: () => api.get<{ members: any[] }>('/members?limit=500') });
   const deact = useMutation({ mutationFn: (id: number) => api.delete(`/members/${id}`), onSuccess: () => qc.invalidateQueries({ queryKey: ['roster'] }) });
@@ -37,7 +37,9 @@ export default function ManageRoster() {
                   <td className="muted">{m.phone || '\u2014'}</td>
                   <td>
                     <div className="btn-row" style={{ justifyContent: 'flex-end' }}>
-                      {member?.superAdmin && (<button className="btn ghost sm" title="Set password" onClick={() => setPwFor(m)}><Icon name="settings" size={15} /></button>)}
+                      {member?.superAdmin && (
+                        <button className="btn ghost sm" title="Manage member" onClick={() => setManageFor(m)}><Icon name="settings" size={15} /></button>
+                      )}
                       <button className="btn ghost sm" title="Deactivate" onClick={() => { if (confirm(`Remove ${m.name}? (deactivates, keeps history)`)) deact.mutate(m.id); }}><Icon name="trash" size={15} /></button>
                     </div>
                   </td>
@@ -47,23 +49,63 @@ export default function ManageRoster() {
           </table>
         </div>
       )}
-      {pwFor && <SetPwModal member={pwFor} onClose={() => setPwFor(null)} />}
+      {manageFor && <ManageMemberModal member={manageFor} onClose={() => { setManageFor(null); qc.invalidateQueries({ queryKey: ['roster'] }); }} />}
     </>
   );
 }
 
-const SetPwModal: React.FC<{ member: any; onClose: () => void }> = ({ member, onClose }) => {
+const ManageMemberModal: React.FC<{ member: any; onClose: () => void }> = ({ member, onClose }) => {
+  const [avatarUrl, setAvatarUrl] = useState(member.avatar_url || '');
+  const [uploading, setUploading] = useState(false);
   const [pw, setPw] = useState('');
-  const m = useMutation({
+
+  const uploadAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      setUploading(true);
+      try {
+        const r = await api.post<{ url: string }>(`/admin/members/${member.id}/avatar`, { file: reader.result as string });
+        setAvatarUrl(r.url);
+      } catch (err: any) { alert(err?.message || 'Upload failed'); }
+      finally { setUploading(false); }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const pwMutation = useMutation({
     mutationFn: (password: string) => api.post(`/admin/members/${member.id}/password`, { password }),
-    onSuccess: () => { alert('Password updated'); onClose(); },
+    onSuccess: () => { alert('Password updated'); setPw(''); },
     onError: (e: any) => alert(e.message || 'Failed'),
   });
+
   return (
-    <Modal title={`Set password · ${member.name}`} onClose={onClose}
-      footer={<><button className="btn ghost" onClick={onClose}>Cancel</button><button className="btn primary" disabled={m.isPending || pw.length < 6} onClick={() => m.mutate(pw)}>{m.isPending ? 'Saving...' : 'Save password'}</button></>}>
-      <Field label="New password (min 6 characters)"><input className="input" type="text" value={pw} onChange={(e) => setPw(e.target.value)} autoFocus placeholder="Set a temporary password" /></Field>
-      <div className="hint">Share this with the member. They can change it later from their profile (when password login is active).</div>
+    <Modal title={`Manage \u00b7 ${member.name}`} onClose={onClose}
+      footer={<><button className="btn ghost" onClick={onClose}>Close</button></>}>
+      {/* Avatar section */}
+      <div className="card-title">Profile Photo</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
+        <Avatar name={member.name} src={avatarUrl || null} size="lg" />
+        <div>
+          <label className="btn outline sm" style={{ cursor: 'pointer', display: 'inline-flex' }}>
+            {uploading ? 'Uploading...' : 'Change photo'}
+            <input type="file" accept="image/*" hidden onChange={uploadAvatar} />
+          </label>
+          <div className="hint" style={{ marginTop: 6 }}>JPG/PNG/WebP, up to 4 MB.</div>
+        </div>
+      </div>
+
+      <hr className="divider" />
+
+      {/* Password section */}
+      <div className="card-title">Password</div>
+      <Field label="New password (min 6 characters)">
+        <input className="input" type="text" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="Set a temporary password" />
+      </Field>
+      <button className="btn primary sm" style={{ marginTop: 10 }} disabled={pwMutation.isPending || pw.length < 6} onClick={() => pwMutation.mutate(pw)}>
+        {pwMutation.isPending ? 'Saving...' : 'Save password'}
+      </button>
+      <div className="hint" style={{ marginTop: 8 }}>Share this with the member. They can change it later from their profile.</div>
     </Modal>
   );
 };

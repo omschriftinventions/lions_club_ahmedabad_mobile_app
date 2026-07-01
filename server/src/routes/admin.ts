@@ -1,11 +1,16 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import fs from 'fs';
+import path from 'path';
+import crypto from 'crypto';
 import { requireAuth, AuthedRequest } from '../middleware/auth';
 import { requireSuperAdmin } from '../middleware/rbac';
 import { requireEditor } from '../middleware/rbac';
 import { getSetting, setSetting } from '../settings';
 import { hashPassword } from '../utils/password';
+import { HttpError } from '../middleware/error';
 import { exec } from '../db';
+import { config } from '../config';
 import * as wa from '../providers/whatsapp';
 import * as sms from '../providers/sms';
 
@@ -32,6 +37,31 @@ router.post('/members/:id/password', requireEditor, async (req: AuthedRequest, r
   const { password } = z.object({ password: z.string().min(6).max(200) }).parse(req.body);
   await exec(`UPDATE members SET password_hash = :h WHERE id = :id`, { h: await hashPassword(password), id });
   res.json({ ok: true });
+});
+
+// POST /admin/members/:id/avatar { file: dataURL } — set a member's profile photo
+const AVATAR_MIME = ['image/jpeg', 'image/png', 'image/webp'] as const;
+const AVATAR_MAX = 4 * 1024 * 1024;
+const AVATAR_EXT: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+
+router.post('/members/:id/avatar', async (req: AuthedRequest, res) => {
+  const id = z.coerce.number().int().parse(req.params.id);
+  const { file } = z.object({ file: z.string().min(1).max(7_000_000) }).parse(req.body);
+  const match = file.match(/^data:(image\/[a-z+]+);base64,([A-Za-z0-9+/=]+)$/i);
+  if (!match) throw new HttpError(400, 'invalid_image', 'expected a data:image/...;base64,... payload');
+  const mime = match[1].toLowerCase();
+  if (!AVATAR_MIME.includes(mime as typeof AVATAR_MIME[number])) throw new HttpError(400, 'unsupported_image_type');
+  const buf = Buffer.from(match[2], 'base64');
+  if (buf.length > AVATAR_MAX) throw new HttpError(413, 'image_too_large', 'max 4 MB');
+  const ext = AVATAR_EXT[mime] ?? 'bin';
+  const filename = 'avatar-' + id + '-' + crypto.randomUUID() + '.' + ext;
+  const dir = path.join(path.dirname(config.uploads.dir), 'avatars');
+  await fs.promises.mkdir(dir, { recursive: true });
+  await fs.promises.writeFile(path.join(dir, filename), buf);
+  const base = config.uploads.publicBaseUrl || (req.protocol + '://' + req.get('host'));
+  const url = base + '/uploads/avatars/' + filename;
+  await exec('UPDATE members SET avatar_url = :url WHERE id = :id', { url, id });
+  res.json({ url });
 });
 
 // GET /admin/whatsapp/qr — poll QR + connection status
