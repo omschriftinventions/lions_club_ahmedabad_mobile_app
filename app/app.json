@@ -16,8 +16,9 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.lionsclub.ahmedabad",
       "infoPlist": {
-        "NSUserNotificationsUsageDescription": "Receive event reminders and announcements.",
-        "ITSAppUsesNonExemptEncryption": false
+        "NSPhotoLibraryUsageDescription": "Select photos to upload to your profile and the club gallery.",
+        "NSCameraUsageDescription": "Take photos for your profile and the club gallery.",
+        "NSMicrophoneUsageDescription": "Required for video recording if used with the camera."
       }
     },
     "android": {

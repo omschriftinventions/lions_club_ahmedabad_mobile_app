@@ -4,13 +4,13 @@ import { query, exec } from '../db';
 import { requireAuth, AuthedRequest } from '../middleware/auth';
 import { requireEditor } from '../middleware/rbac';
 import { broadcastToClub } from '../services/push';
+import * as wa from '../providers/whatsapp';
 import { RowDataPacket } from 'mysql2';
 
 const router = Router();
 router.use(requireAuth);
 
-// POST /broadcast — Officer pushes a notification to every member of their club.
-// Also writes inbox rows in `notifications` so members see history.
+// POST /broadcast — Officer pushes a push notification to every member of their club.
 router.post('/', requireEditor, async (req: AuthedRequest, res) => {
   const data = z.object({
     title: z.string().min(2).max(160),
@@ -18,9 +18,8 @@ router.post('/', requireEditor, async (req: AuthedRequest, res) => {
     icon: z.string().max(8).optional(),
   }).parse(req.body);
 
-  // 1. Inbox rows for every active member of the club
   const members = await query<(RowDataPacket & { id: number })[]>(
-    `SELECT id FROM members WHERE club_id = :clubId AND active = 1`,
+    `SELECT id FROM members WHERE club_id = :clubId AND active = 1 AND is_super_admin = 0`,
     { clubId: req.user!.clubId }
   );
 
@@ -28,7 +27,7 @@ router.post('/', requireEditor, async (req: AuthedRequest, res) => {
     const placeholders = members.map(() => `(?, 'broadcast', ?, ?, ?)`).join(',');
     const params: any[] = [];
     for (const m of members) {
-      params.push(m.id, data.title, data.body ?? null, data.icon ?? '📣');
+      params.push(m.id, data.title, data.body ?? null, data.icon ?? '\uD83D\uDCE3');
     }
     await exec(
       `INSERT INTO notifications (member_id, type, title, body, icon) VALUES ${placeholders}`,
@@ -36,7 +35,6 @@ router.post('/', requireEditor, async (req: AuthedRequest, res) => {
     );
   }
 
-  // 2. Push fan-out (fire-and-forget — failures don't block API response)
   broadcastToClub(req.user!.clubId, {
     title: data.title,
     body: data.body,
@@ -44,6 +42,42 @@ router.post('/', requireEditor, async (req: AuthedRequest, res) => {
   }).catch(() => {});
 
   res.json({ ok: true, recipients: members.length });
+});
+
+// POST /broadcast/whatsapp — Send a WhatsApp message to all or selected members.
+// Body: { message: string, memberIds?: number[] }  (empty/omitted memberIds = all active members with phone)
+router.post('/whatsapp', requireEditor, async (req: AuthedRequest, res) => {
+  const { message, memberIds } = z.object({
+    message: z.string().min(1).max(4000),
+    memberIds: z.array(z.number().int()).optional(),
+  }).parse(req.body);
+
+  const clubId = req.user!.clubId;
+  let members: { id: number; name: string; phone_e164: string | null }[];
+
+  if (memberIds && memberIds.length > 0) {
+    const idList = memberIds.join(',');
+    members = await query<(RowDataPacket & { id: number; name: string; phone_e164: string | null })[]>(
+      `SELECT id, name, phone_e164 FROM members WHERE club_id = :clubId AND active = 1 AND is_super_admin = 0 AND id IN (${idList})`,
+      { clubId }
+    );
+  } else {
+    members = await query<(RowDataPacket & { id: number; name: string; phone_e164: string | null })[]>(
+      `SELECT id, name, phone_e164 FROM members WHERE club_id = :clubId AND active = 1 AND is_super_admin = 0 AND phone_e164 IS NOT NULL`,
+      { clubId }
+    );
+  }
+
+  let sent = 0, failed = 0, noPhone = 0;
+  for (const m of members) {
+    if (!m.phone_e164) { noPhone++; continue; }
+    const ok = await wa.send(m.phone_e164, message);
+    if (ok) sent++; else failed++;
+    // Small delay to reduce WhatsApp rate-limit / ban risk
+    await new Promise(r => setTimeout(r, 150));
+  }
+
+  res.json({ ok: true, sent, failed, noPhone, total: members.length });
 });
 
 export default router;
