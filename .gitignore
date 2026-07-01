@@ -24,3 +24,6 @@ server/import-preview.json
 server/import-errors.json
 wa-auth/
 server/wa-auth/
+
+# TypeScript build info
+*.tsbuildinfo
