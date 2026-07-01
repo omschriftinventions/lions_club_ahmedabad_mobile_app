@@ -25,7 +25,7 @@ export default function Login() {
 const Shell: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div className="login-wrap">
     <div className="login-art">
-      <div className="mark">L</div>
+      <img className="mark" src="/logo.png" alt="Lions Club" style={{ objectFit: "cover" }} />
       <div>
         <h1>Lions Club Ahmedabad Host</h1>
         <p>Member portal for events, news, the club roster and service impact. Sign in with your registered phone number.</p>

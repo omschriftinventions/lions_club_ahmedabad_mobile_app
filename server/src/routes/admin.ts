@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { AuthedRequest } from '../middleware/auth';
+import { requireAuth, AuthedRequest } from '../middleware/auth';
 import { requireSuperAdmin } from '../middleware/rbac';
 import { requireEditor } from '../middleware/rbac';
 import { getSetting, setSetting } from '../settings';
@@ -10,6 +10,7 @@ import * as wa from '../providers/whatsapp';
 import * as sms from '../providers/sms';
 
 const router = Router();
+router.use(requireAuth);
 router.use(requireSuperAdmin);
 
 // GET /admin/auth — current auth method + channel statuses

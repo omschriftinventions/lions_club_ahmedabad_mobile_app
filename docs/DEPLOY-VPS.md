@@ -215,7 +215,7 @@ npm run build      # uses web/.env.production -> API = https://api.lionsclubofah
 
 If `web/.env.production` is missing (gitignored), create it:
 ```bash
-echo 'VITE_API_URL=https://api.lionsclubofahmedabadhost.com' > web/.env.production
+echo 'VITE_API_URL=http://5.189.172.74:4000' > .env.production
 npm run build
 ```
 

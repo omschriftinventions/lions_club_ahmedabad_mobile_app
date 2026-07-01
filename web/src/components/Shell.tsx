@@ -62,7 +62,7 @@ export const Shell: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     <div className="app-shell">
       <aside className={`sidebar${open ? ' open' : ''}`}>
         <div className="brand">
-          <div className="brand-mark">L</div>
+          <img className="brand-mark" src="/logo.png" alt="Lions Club" style={{ objectFit: "cover" }} />
           <div className="brand-text"><b>Lions Club</b><span>Ahmedabad Host</span></div>
         </div>
         <nav className="nav">
