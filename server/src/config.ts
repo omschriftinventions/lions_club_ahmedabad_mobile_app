@@ -1,4 +1,5 @@
-import 'dotenv/config';
+﻿import 'dotenv/config';
+import path from 'path';
 
 function need(name: string, fallback?: string): string {
   const v = process.env[name] ?? fallback;
@@ -47,5 +48,12 @@ export const config = {
 
   cors: {
     origins: (process.env.CORS_ORIGINS ?? '').split(',').map(s => s.trim()).filter(Boolean),
+  },
+
+  uploads: {
+    // Absolute dir where uploaded photos are written. Default: <cwd>/uploads/photos
+    dir: process.env.UPLOADS_DIR ?? path.resolve(process.cwd(), 'uploads', 'photos'),
+    // Public base used to build photo URLs. If empty, derived from the request host.
+    publicBaseUrl: (process.env.PUBLIC_BASE_URL ?? '').replace(/\/+$/, ''),
   },
 };

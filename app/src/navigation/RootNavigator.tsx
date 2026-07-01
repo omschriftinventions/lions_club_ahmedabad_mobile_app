@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../lib/auth';
 import AuthStack from './AuthStack';
@@ -28,8 +28,10 @@ import HelpFAQScreen from '../screens/main/HelpFAQScreen';
 import ReferLionScreen from '../screens/main/ReferLionScreen';
 import DistrictNewsScreen from '../screens/main/DistrictNewsScreen';
 import ProjectDetailScreen from '../screens/main/ProjectDetailScreen';
+import LogProjectScreen from '../screens/main/LogProjectScreen';
 import PhotoGalleryScreen from '../screens/main/PhotoGalleryScreen';
 import PastEventRecapScreen from '../screens/main/PastEventRecapScreen';
+import AdminScreen from '../screens/main/AdminScreen';
 
 export type RootStackParamList = {
   Main: undefined;
@@ -58,8 +60,10 @@ export type RootStackParamList = {
   ReferLion: undefined;
   DistrictNews: undefined;
   ProjectDetail: { id?: number; causeId?: string };
+  LogProject: { causeId?: string };
   PhotoGallery: undefined;
   PastEventRecap: { id: number };
+  Admin: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -95,8 +99,10 @@ export default function RootNavigator() {
       <Stack.Screen name="ReferLion" component={ReferLionScreen} />
       <Stack.Screen name="DistrictNews" component={DistrictNewsScreen} />
       <Stack.Screen name="ProjectDetail" component={ProjectDetailScreen} />
+      <Stack.Screen name="LogProject" component={LogProjectScreen} />
       <Stack.Screen name="PhotoGallery" component={PhotoGalleryScreen} />
       <Stack.Screen name="PastEventRecap" component={PastEventRecapScreen} />
+      <Stack.Screen name="Admin" component={AdminScreen} />
     </Stack.Navigator>
   );
 }

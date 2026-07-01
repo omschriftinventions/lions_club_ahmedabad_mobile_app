@@ -15,3 +15,12 @@ coverage/
 .vscode/
 *.tmp
 db/seed.sql
+
+# PII / import artifacts — never commit member data
+*.xlsx
+db/import-members.csv
+.tmp_xlsx/
+server/import-preview.json
+server/import-errors.json
+wa-auth/
+server/wa-auth/

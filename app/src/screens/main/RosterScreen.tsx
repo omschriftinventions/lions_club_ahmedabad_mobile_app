@@ -12,7 +12,7 @@ import { T } from '../../theme/tokens';
 interface Member {
   id: number; name: string; initials: string; designation: string | null;
   profession: string | null; business: string | null; area: string | null;
-  role: string; role_label: string; role_color: string; avatar_color: string | null;
+  role: string; role_label: string; role_color: string; avatar_color: string | null; avatar_url: string | null;
 }
 
 export default function RosterScreen() {
@@ -33,7 +33,7 @@ export default function RosterScreen() {
           <TextInput
             value={q}
             onChangeText={setQ}
-            placeholder="Search name, profession, area"
+            placeholder="Search name, profession, business, area, role"
             placeholderTextColor={T.inkFaint}
             style={{ flex: 1, marginLeft: 8, fontSize: 14, color: T.ink }}
           />
@@ -49,7 +49,7 @@ export default function RosterScreen() {
               flexDirection: 'row', backgroundColor: T.surface, padding: 14, borderRadius: T.r.lg,
               marginBottom: 10, alignItems: 'center', gap: 12,
             }}>
-              <Avatar initials={item.initials} color={item.avatar_color ?? item.role_color} size={48} />
+              <Avatar initials={item.initials} color={item.avatar_color ?? item.role_color} size={48} uri={item.avatar_url} />
               <View style={{ flex: 1 }}>
                 <Text style={{ fontWeight: '700', color: T.ink }}>{item.name}</Text>
                 <Text style={{ color: T.inkMute, fontSize: 12, marginTop: 2 }} numberOfLines={1}>

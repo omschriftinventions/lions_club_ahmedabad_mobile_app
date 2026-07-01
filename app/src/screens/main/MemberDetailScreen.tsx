@@ -32,7 +32,7 @@ export default function MemberDetailScreen() {
       </View>
 
       <View style={{ alignItems: 'center', paddingHorizontal: 20, paddingBottom: 16 }}>
-        <Avatar initials={m.initials} color={m.avatar_color ?? m.role_color} size={104} />
+        <Avatar initials={m.initials} color={m.avatar_color ?? m.role_color} size={104} uri={m.avatar_url} />
         <Text style={{ marginTop: 14, fontSize: 22, fontWeight: '800', color: T.ink }}>{m.name}</Text>
         <View style={{ flexDirection: 'row', gap: 6, marginTop: 8 }}>
           <Pill label={m.role_label} color={m.role_color} />
@@ -63,6 +63,17 @@ export default function MemberDetailScreen() {
           <Row icon="people" label="Spouse" value={m.spouse} />
         </Card>
         {m.bio && <Card><Text style={{ color: T.inkSoft, lineHeight: 20 }}>{m.bio}</Text></Card>}
+        {(m.expertise || m.goals || m.accomplishments || m.interests || m.network || m.social) ? (
+          <Card>
+            <Text style={{ color: T.inkMute, fontSize: 11, fontWeight: '800', letterSpacing: 1, marginBottom: 8 }}>NETWORKING (E-GAINS)</Text>
+            <Eg label="Expertise" v={m.expertise} />
+            <Eg label="Goals" v={m.goals} />
+            <Eg label="Accomplishments" v={m.accomplishments} />
+            <Eg label="Interests" v={m.interests} />
+            <Eg label="Network" v={m.network} />
+            <Eg label="Social connections" v={m.social} />
+          </Card>
+        ) : null}
       </View>
     </Screen>
   );
@@ -87,3 +98,9 @@ const Row = ({ icon, label, value }: any) =>
       </View>
     </View>
   ) : null;
+const Eg = ({ label, v }: any) => v && v.trim() ? (
+  <View style={{ marginBottom: 10 }}>
+    <Text style={{ color: T.inkMute, fontSize: 11, letterSpacing: 0.5 }}>{label.toUpperCase()}</Text>
+    <Text style={{ color: T.ink, fontSize: 14, marginTop: 2, lineHeight: 19 }}>{v}</Text>
+  </View>
+) : null;

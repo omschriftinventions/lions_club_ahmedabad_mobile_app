@@ -55,6 +55,12 @@ CREATE TABLE IF NOT EXISTS members (
   avatar_color  CHAR(7)      NULL,
   avatar_url    VARCHAR(255) NULL,
   bio           TEXT         NULL,
+  expertise      TEXT         NULL,  -- E-GAINS: Expertise
+  goals          TEXT         NULL,  -- E-GAINS: Goals
+  accomplishments TEXT         NULL,  -- E-GAINS: Accomplishments
+  interests      TEXT         NULL,  -- E-GAINS: Interests
+  network        TEXT         NULL,  -- E-GAINS: Network
+  social         TEXT         NULL,  -- E-GAINS: Social connections
   active        TINYINT(1)   NOT NULL DEFAULT 1,
   created_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
   updated_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

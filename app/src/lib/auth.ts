@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
+import { getItem, setItem, deleteItem } from './storage';
 
 const KEY_ACCESS = 'lc.access';
 const KEY_REFRESH = 'lc.refresh';
@@ -13,6 +13,7 @@ export interface AuthMember {
   role: string;
   canEdit: boolean;
   clubId: number;
+  superAdmin?: boolean;
 }
 
 interface AuthState {
@@ -25,11 +26,12 @@ interface AuthState {
   verifyOtp: (phone: string, code: string) => Promise<void>;
   logout: () => Promise<void>;
   tryRefresh: () => Promise<boolean>;
+  loginWithPassword: (phone: string, password: string) => Promise<void>;
 }
 
-async function setSecure(k: string, v: string | null) {
-  if (v == null) await SecureStore.deleteItemAsync(k);
-  else await SecureStore.setItemAsync(k, v);
+async function storeVal(k: string, v: string | null) {
+  if (v == null) await deleteItem(k);
+  else await setItem(k, v);
 }
 
 export const useAuth = create<AuthState>((set, get) => ({
@@ -40,9 +42,9 @@ export const useAuth = create<AuthState>((set, get) => ({
 
   hydrate: async () => {
     const [access, refresh, memberStr] = await Promise.all([
-      SecureStore.getItemAsync(KEY_ACCESS),
-      SecureStore.getItemAsync(KEY_REFRESH),
-      SecureStore.getItemAsync(KEY_MEMBER),
+      getItem(KEY_ACCESS),
+      getItem(KEY_REFRESH),
+      getItem(KEY_MEMBER),
     ]);
     set({
       access,
@@ -73,9 +75,9 @@ export const useAuth = create<AuthState>((set, get) => ({
     }
     const data = await res.json() as { access: string; refresh: string; member: AuthMember };
     await Promise.all([
-      setSecure(KEY_ACCESS, data.access),
-      setSecure(KEY_REFRESH, data.refresh),
-      setSecure(KEY_MEMBER, JSON.stringify(data.member)),
+      storeVal(KEY_ACCESS, data.access),
+      storeVal(KEY_REFRESH, data.refresh),
+      storeVal(KEY_MEMBER, JSON.stringify(data.member)),
     ]);
     set({ access: data.access, refresh: data.refresh, member: data.member });
   },
@@ -90,9 +92,9 @@ export const useAuth = create<AuthState>((set, get) => ({
       }).catch(() => {});
     }
     await Promise.all([
-      setSecure(KEY_ACCESS, null),
-      setSecure(KEY_REFRESH, null),
-      setSecure(KEY_MEMBER, null),
+      storeVal(KEY_ACCESS, null),
+      storeVal(KEY_REFRESH, null),
+      storeVal(KEY_MEMBER, null),
     ]);
     set({ access: null, refresh: null, member: null });
   },
@@ -110,8 +112,27 @@ export const useAuth = create<AuthState>((set, get) => ({
       return false;
     }
     const data = await res.json() as { access: string };
-    await setSecure(KEY_ACCESS, data.access);
+    await storeVal(KEY_ACCESS, data.access);
     set({ access: data.access });
     return true;
+  },
+
+  loginWithPassword: async (phone, password) => {
+    const res = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+      body: JSON.stringify({ phone, password }),
+    });
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({}));
+      throw new Error(e.error || 'login_failed');
+    }
+    const data = await res.json() as { access: string; refresh: string; member: AuthMember };
+    await Promise.all([
+      storeVal(KEY_ACCESS, data.access),
+      storeVal(KEY_REFRESH, data.refresh),
+      storeVal(KEY_MEMBER, JSON.stringify(data.member)),
+    ]);
+    set({ access: data.access, refresh: data.refresh, member: data.member });
   },
 }));

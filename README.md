@@ -1,4 +1,4 @@
-# Lions Club Ahmedabad — Mobile App
+﻿# Lions Club Ahmedabad â€” Mobile App
 
 Monorepo. Three pieces:
 
@@ -13,11 +13,11 @@ Design prototypes live at the root (`screens/*.jsx`, `Design Tokens _ RN-ready.h
 
 ## Stack
 
-- **App:** Expo 51 (TS) · React Navigation 6 · Zustand · TanStack Query · Expo Notifications · SecureStore
-- **API:** Node 18+ · Express 4 · mysql2 (promise pool) · JWT (access + refresh) · Zod · helmet · rate-limit · expo-server-sdk
-- **DB:** MySQL 8 (utf8mb4) — local via Docker Desktop
-- **Auth:** Phone OTP (dev: logged; prod: SMS gateway TBD — MSG91/Twilio)
-- **RBAC:** `roles.can_edit_club_data` — only President / Secretary / Treasurer can write. Others read-only.
+- **App:** Expo 51 (TS) Â· React Navigation 6 Â· Zustand Â· TanStack Query Â· Expo Notifications Â· SecureStore
+- **API:** Node 18+ Â· Express 4 Â· mysql2 (promise pool) Â· JWT (access + refresh) Â· Zod Â· helmet Â· rate-limit Â· expo-server-sdk
+- **DB:** MySQL 8 (utf8mb4) â€” local via Docker Desktop
+- **Auth:** Phone OTP (dev: logged; prod: SMS gateway TBD â€” MSG91/Twilio)
+- **RBAC:** `roles.can_edit_club_data` â€” only President / Secretary / Treasurer can write. Others read-only.
 
 ## First run (full dev loop)
 
@@ -35,7 +35,7 @@ npm run dev                          # :4000
 # 3. App
 cd ../app
 npm install
-# Edit app.json → expo.extra.apiBaseUrl to http://<your-LAN-IP>:4000
+# Edit app.json â†’ expo.extra.apiBaseUrl to http://<your-LAN-IP>:4000
 npm start                            # scan QR with Expo Go
 ```
 
@@ -54,14 +54,14 @@ npm run import:pdf -- --file "../New Club Directory.pdf" --dry-run
 npm run import:pdf -- --file "../New Club Directory.pdf"
 ```
 
-The parser is heuristic — manually fix skipped rows in Adminer, or extend `src/scripts/import-pdf-directory.ts`.
+The parser is heuristic â€” manually fix skipped rows in Adminer, or extend `src/scripts/import-pdf-directory.ts`.
 
 ## Production deploy
 
-API → cPanel (Phusion Passenger): see [`docs/DEPLOY-CPANEL.md`](docs/DEPLOY-CPANEL.md).
-App → Expo EAS Build (set `expo.extra.apiBaseUrl` first).
+API â†’ cPanel (Phusion Passenger): see [`docs/DEPLOY-CPANEL.md`](docs/DEPLOY-CPANEL.md).
+App â†’ Expo EAS Build (set `expo.extra.apiBaseUrl` first).
 
-## Phase 1 scope ✓
+## Phase 1 scope âœ“
 
 - [x] All screens from `screens/*.jsx` ported to RN
 - [x] Phone OTP auth + JWT (access + refresh in SecureStore)
@@ -69,10 +69,10 @@ App → Expo EAS Build (set `expo.extra.apiBaseUrl` first).
 - [x] Events (list + detail + RSVP yes/no/maybe)
 - [x] News (list + detail)
 - [x] Profile + Profile Edit
-- [x] Officer Admin (create event / publish news) — gated by RBAC
+- [x] Officer Admin (create event / publish news) â€” gated by RBAC
 - [x] Service / Causes impact dashboard
 - [x] Info / About
-- [x] Push notifications (Expo) — fan-out on new event + news
+- [x] Push notifications (Expo) â€” fan-out on new event + news
 - [x] PDF directory import script
 - [x] MySQL via Docker
 - [x] cPanel deploy guide
@@ -80,8 +80,8 @@ App → Expo EAS Build (set `expo.extra.apiBaseUrl` first).
 ## Phase 2 (later)
 
 - Real SMS gateway (MSG91 / Twilio)
-- Photo uploads (S3 / cPanel disk)
-- Service-project logging UI for officers
-- Notifications inbox UI (data exists; screen not yet built)
+- [x] Photo uploads (server disk direct upload from app; S3 later) — needs `npx expo install expo-image-picker`
+- [x] Service-project logging UI for officers (Log project form on Service Impact)
+- [x] Notifications inbox UI
 - Multi-club / district view
 - iOS / Android EAS Build profiles

@@ -20,7 +20,7 @@ router.get('/:eventId', async (req: AuthedRequest, res) => {
      FROM members m
      JOIN roles r ON r.id = m.role_id
      LEFT JOIN rsvps rs ON rs.member_id = m.id AND rs.event_id = :eventId
-     WHERE m.club_id = :clubId AND m.active = 1
+     WHERE m.club_id = :clubId AND m.active = 1 AND m.is_super_admin = 0
      ORDER BY rs.attended DESC, rs.status, m.name`,
     { eventId, clubId: req.user!.clubId }
   );

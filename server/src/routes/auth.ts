@@ -7,11 +7,16 @@ import { generateOtp, hashOtp, verifyOtp } from '../utils/otp';
 import { signAccess, newRefreshToken, hashRefresh, verifyRefresh } from '../utils/jwt';
 import { HttpError } from '../middleware/error';
 import { config } from '../config';
+import { sendOtp } from '../providers/otp';
+import { getSetting } from '../settings';
+import { hashPassword, verifyPassword } from '../utils/password';
+import { requireAuth, AuthedRequest } from '../middleware/auth';
 import { RowDataPacket } from 'mysql2';
 
 const router = Router();
 
 const otpLimiter = rateLimit({ windowMs: 60_000, max: 5, standardHeaders: true, legacyHeaders: false });
+const loginLimiter = rateLimit({ windowMs: 60_000, max: 10, standardHeaders: true, legacyHeaders: false });
 
 interface MemberRow extends RowDataPacket {
   id: number;
@@ -20,6 +25,37 @@ interface MemberRow extends RowDataPacket {
   phone_e164: string;
   role_code: string;
   can_edit_club_data: number;
+  is_super_admin: number;
+}
+
+const MEMBER_SELECT = `SELECT m.id, m.club_id, m.name, m.phone_e164, r.code AS role_code, r.can_edit_club_data, m.is_super_admin
+     FROM members m JOIN roles r ON r.id = m.role_id`;
+
+// issue access + refresh for a member, insert session, return the response body
+async function issueFor(member: MemberRow, req: any) {
+  const superAdmin = !!member.is_super_admin;
+  const access = signAccess({
+    sub: member.id, role: member.role_code,
+    canEdit: superAdmin || !!member.can_edit_club_data, clubId: member.club_id,
+    superAdmin,
+  });
+  const refresh = newRefreshToken();
+  const refresh_hash = await hashRefresh(refresh);
+  await exec(
+    `INSERT INTO sessions (member_id, refresh_hash, user_agent, ip, expires_at)
+     VALUES (:member_id, :refresh_hash, :ua, :ip, DATE_ADD(NOW(), INTERVAL 30 DAY))`,
+    {
+      member_id: member.id, refresh_hash,
+      ua: req.headers['user-agent']?.slice(0, 255) ?? null, ip: req.ip ?? null,
+    }
+  );
+  return {
+    access, refresh,
+    member: {
+      id: member.id, name: member.name, role: member.role_code,
+      canEdit: superAdmin || !!member.can_edit_club_data, clubId: member.club_id, superAdmin,
+    },
+  };
 }
 
 // POST /auth/otp/request  { phone }
@@ -28,14 +64,10 @@ router.post('/otp/request', otpLimiter, async (req, res) => {
   const phone = normalizePhoneIN(body.phone);
 
   const members = await query<MemberRow[]>(
-    `SELECT m.id, m.club_id, m.name, m.phone_e164, r.code AS role_code, r.can_edit_club_data
-     FROM members m JOIN roles r ON r.id = m.role_id
-     WHERE m.phone_e164 = :phone AND m.active = 1
-     LIMIT 1`,
+    `${MEMBER_SELECT} WHERE m.phone_e164 = :phone AND m.active = 1 LIMIT 1`,
     { phone }
   );
   if (members.length === 0) {
-    // Don't reveal — still return success, but skip OTP write
     return res.json({ ok: true });
   }
 
@@ -52,8 +84,7 @@ router.post('/otp/request', otpLimiter, async (req, res) => {
     // eslint-disable-next-line no-console
     console.log(`[OTP] ${phone} -> ${code} (expires ${expires_at.toISOString()})`);
   }
-  // TODO: send via SMS gateway when configured
-
+  await sendOtp(phone, code);
   res.json({ ok: true });
 });
 
@@ -64,35 +95,11 @@ router.post('/otp/verify', otpLimiter, async (req, res) => {
 
   // DEV bypass — any 6-digit code accepted. Env-gated.
   if (config.otp.devBypass) {
-    const member = (await query<MemberRow[]>(
-      `SELECT m.id, m.club_id, m.name, m.phone_e164, r.code AS role_code, r.can_edit_club_data
-       FROM members m JOIN roles r ON r.id = m.role_id
-       WHERE m.phone_e164 = :phone AND m.active = 1 LIMIT 1`,
-      { phone }
-    ))[0];
+    const member = (await query<MemberRow[]>(`${MEMBER_SELECT} WHERE m.phone_e164 = :phone AND m.active = 1 LIMIT 1`, { phone }))[0];
     if (!member) throw new HttpError(404, 'member_not_found');
-
     // eslint-disable-next-line no-console
     console.warn(`[AUTH] DEV_BYPASS_OTP — issued tokens to ${phone} without code check`);
-
-    const access = signAccess({
-      sub: member.id, role: member.role_code,
-      canEdit: !!member.can_edit_club_data, clubId: member.club_id,
-    });
-    const refresh = newRefreshToken();
-    const refresh_hash = await hashRefresh(refresh);
-    await exec(
-      `INSERT INTO sessions (member_id, refresh_hash, user_agent, ip, expires_at)
-       VALUES (:member_id, :refresh_hash, :ua, :ip, DATE_ADD(NOW(), INTERVAL 30 DAY))`,
-      {
-        member_id: member.id, refresh_hash,
-        ua: req.headers['user-agent']?.slice(0, 255) ?? null, ip: req.ip ?? null,
-      }
-    );
-    return res.json({
-      access, refresh,
-      member: { id: member.id, name: member.name, role: member.role_code, canEdit: !!member.can_edit_club_data, clubId: member.club_id },
-    });
+    return res.json(await issueFor(member, req));
   }
 
   const rows = await query<(RowDataPacket & { id: number; code_hash: string; expires_at: Date; attempts: number; consumed_at: Date | null; })[]>(
@@ -113,41 +120,32 @@ router.post('/otp/verify', otpLimiter, async (req, res) => {
     throw new HttpError(400, 'otp_invalid');
   }
 
-  const member = (await query<MemberRow[]>(
-    `SELECT m.id, m.club_id, m.name, m.phone_e164, r.code AS role_code, r.can_edit_club_data
-     FROM members m JOIN roles r ON r.id = m.role_id
-     WHERE m.phone_e164 = :phone AND m.active = 1 LIMIT 1`,
-    { phone }
-  ))[0];
+  const member = (await query<MemberRow[]>(`${MEMBER_SELECT} WHERE m.phone_e164 = :phone AND m.active = 1 LIMIT 1`, { phone }))[0];
   if (!member) throw new HttpError(404, 'member_not_found');
 
   await exec(`UPDATE otps SET consumed_at = NOW() WHERE id = :id`, { id: row.id });
+  res.json(await issueFor(member, req));
+});
 
-  const access = signAccess({
-    sub: member.id,
-    role: member.role_code,
-    canEdit: !!member.can_edit_club_data,
-    clubId: member.club_id,
-  });
-  const refresh = newRefreshToken();
-  const refresh_hash = await hashRefresh(refresh);
-  const ttlDays = 30;
-  await exec(
-    `INSERT INTO sessions (member_id, refresh_hash, user_agent, ip, expires_at)
-     VALUES (:member_id, :refresh_hash, :ua, :ip, DATE_ADD(NOW(), INTERVAL ${ttlDays} DAY))`,
-    {
-      member_id: member.id,
-      refresh_hash,
-      ua: req.headers['user-agent']?.slice(0, 255) ?? null,
-      ip: req.ip ?? null,
-    }
-  );
+// POST /auth/dev-login  { memberId? }   — DEV ONLY (gated on DEV_BYPASS_OTP)
+// Skips OTP entirely and issues tokens for a super admin / officer (or a specified member).
+router.post('/dev-login', async (req, res) => {
+  if (!config.otp.devBypass) throw new HttpError(404, 'not_found');
+  const body = z.object({ memberId: z.coerce.number().int().optional() }).parse(req.body ?? {});
 
-  res.json({
-    access,
-    refresh,
-    member: { id: member.id, name: member.name, role: member.role_code, canEdit: !!member.can_edit_club_data, clubId: member.club_id },
-  });
+  let member: MemberRow | undefined;
+  if (body.memberId) {
+    member = (await query<MemberRow[]>(`${MEMBER_SELECT} WHERE m.id = :id AND m.active = 1 LIMIT 1`, { id: body.memberId }))[0];
+  }
+  // Prefer super admins, then officers, then any active member.
+  if (!member) member = (await query<MemberRow[]>(`${MEMBER_SELECT} WHERE m.active = 1 AND m.is_super_admin = 1 ORDER BY m.id LIMIT 1`))[0];
+  if (!member) member = (await query<MemberRow[]>(`${MEMBER_SELECT} WHERE m.active = 1 AND r.can_edit_club_data = 1 ORDER BY r.rank_order, m.id LIMIT 1`))[0];
+  if (!member) member = (await query<MemberRow[]>(`${MEMBER_SELECT} WHERE m.active = 1 ORDER BY m.id LIMIT 1`))[0];
+  if (!member) throw new HttpError(404, 'no_members');
+
+  // eslint-disable-next-line no-console
+  console.warn(`[AUTH] DEV_BYPASS_OTP — dev-login issued tokens to ${member.phone_e164} (${member.role_code})`);
+  res.json(await issueFor(member, req));
 });
 
 // POST /auth/refresh  { refresh }
@@ -164,21 +162,14 @@ router.post('/refresh', async (req, res) => {
   }
   if (!matched) throw new HttpError(401, 'refresh_invalid');
 
-  const member = (await query<MemberRow[]>(
-    `SELECT m.id, m.club_id, m.name, m.phone_e164, r.code AS role_code, r.can_edit_club_data
-     FROM members m JOIN roles r ON r.id = m.role_id
-     WHERE m.id = :id LIMIT 1`,
-    { id: matched.member_id }
-  ))[0];
+  const member = (await query<MemberRow[]>(`${MEMBER_SELECT} WHERE m.id = :id LIMIT 1`, { id: matched.member_id }))[0];
   if (!member) throw new HttpError(404, 'member_not_found');
 
+  const superAdmin = !!member.is_super_admin;
   const access = signAccess({
-    sub: member.id,
-    role: member.role_code,
-    canEdit: !!member.can_edit_club_data,
-    clubId: member.club_id,
+    sub: member.id, role: member.role_code,
+    canEdit: superAdmin || !!member.can_edit_club_data, clubId: member.club_id, superAdmin,
   });
-
   res.json({ access });
 });
 
@@ -196,6 +187,32 @@ router.post('/logout', async (req, res) => {
       }
     }
   });
+  res.json({ ok: true });
+});
+
+// GET /auth/method - public; tells the client which login flow to render
+router.get('/method', async (_req, res) => {
+  res.json({ method: await getSetting('auth_method', 'password') });
+});
+
+// POST /auth/login { phone, password } - password authentication
+router.post('/login', loginLimiter, async (req, res) => {
+  const { phone, password } = z.object({ phone: z.string().min(7).max(20), password: z.string().min(1).max(200) }).parse(req.body);
+  const p = normalizePhoneIN(phone);
+  const member = (await query<MemberRow[]>(`${MEMBER_SELECT} WHERE m.phone_e164 = :p AND m.active = 1 LIMIT 1`, { p }))[0];
+  if (!member) throw new HttpError(401, 'invalid_credentials');
+  const rows = await query<(RowDataPacket & { password_hash: string | null })[]>(`SELECT password_hash FROM members WHERE id = :id`, { id: member.id });
+  if (!rows[0]?.password_hash) throw new HttpError(401, 'password_not_set');
+  if (!(await verifyPassword(password, rows[0].password_hash))) throw new HttpError(401, 'invalid_credentials');
+  res.json(await issueFor(member, req));
+});
+
+// POST /auth/change-password { oldPassword, newPassword } - self
+router.post('/change-password', requireAuth, async (req: AuthedRequest, res) => {
+  const { oldPassword, newPassword } = z.object({ oldPassword: z.string().min(1), newPassword: z.string().min(6).max(200) }).parse(req.body);
+  const rows = await query<(RowDataPacket & { password_hash: string | null })[]>(`SELECT password_hash FROM members WHERE id = :id`, { id: req.user!.sub });
+  if (!rows[0]?.password_hash || !(await verifyPassword(oldPassword, rows[0].password_hash))) throw new HttpError(401, 'invalid_credentials');
+  await exec(`UPDATE members SET password_hash = :h WHERE id = :id`, { h: await hashPassword(newPassword), id: req.user!.sub });
   res.json({ ok: true });
 });
 

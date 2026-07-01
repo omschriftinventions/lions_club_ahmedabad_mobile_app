@@ -14,6 +14,10 @@ services:
       - lionsclub_mysql_data:/var/lib/mysql
       - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
       - ./db/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+      - ./db/migrations/002_phase2.sql:/docker-entrypoint-initdb.d/03-phase2.sql:ro
+      - ./db/migrations/003_egains.sql:/docker-entrypoint-initdb.d/04-egains.sql:ro
+      - ./db/migrations/004_settings.sql:/docker-entrypoint-initdb.d/05-settings.sql:ro
+      - ./db/migrations/005_auth_password.sql:/docker-entrypoint-initdb.d/06-auth-password.sql:ro
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci

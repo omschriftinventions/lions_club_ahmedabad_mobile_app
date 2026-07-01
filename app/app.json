@@ -16,7 +16,8 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.lionsclub.ahmedabad",
       "infoPlist": {
-        "NSUserNotificationsUsageDescription": "Receive event reminders and announcements."
+        "NSUserNotificationsUsageDescription": "Receive event reminders and announcements.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -26,6 +27,7 @@
         "backgroundColor": "#001F45"
       },
       "permissions": [
+        "NOTIFICATIONS",
         "NOTIFICATIONS"
       ]
     },
@@ -40,11 +42,17 @@
       ]
     ],
     "extra": {
-      "apiBaseUrl": "https://8d81-2405-201-202b-b8c5-f907-6bd9-4461-8b78.ngrok-free.app",
+      "apiBaseUrl": "https://api.lionsclubofahmedabadhost.com",
       "eas": {
         "projectId": "f9f67e3e-62ce-4222-ab83-2cb25dffb4ef"
       }
     },
-    "owner": "freeza_goku"
+    "owner": "freeza_goku",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/f9f67e3e-62ce-4222-ab83-2cb25dffb4ef"
+    }
   }
 }

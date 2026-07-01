@@ -46,7 +46,7 @@ export default function FindMemberScreen() {
     if (q) {
       const lc = q.toLowerCase();
       rows = rows.filter(m =>
-        [m.name, m.profession, m.business, m.area].some(v => v?.toLowerCase().includes(lc)));
+        [m.name, m.profession, m.business, m.area, m.designation, m.role_label, m.role].some(v => v?.toLowerCase().includes(lc)));
     }
     return rows;
   }, [data, q, filter]);
@@ -64,7 +64,7 @@ export default function FindMemberScreen() {
           <TextInput
             value={q}
             onChangeText={setQ}
-            placeholder="Name, profession, area"
+            placeholder="Name, profession, business, area, role"
             placeholderTextColor={T.inkFaint}
             style={{ flex: 1, marginLeft: 8, fontSize: 14, color: T.ink }}
           />

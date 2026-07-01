@@ -8,6 +8,7 @@ export interface AccessPayload {
   role: string;         // role.code
   canEdit: boolean;     // can_edit_club_data
   clubId: number;
+  superAdmin: boolean;   // bypasses all RBAC, hidden from roster
 }
 
 export function signAccess(payload: AccessPayload): string {

@@ -72,7 +72,7 @@ export default function HomeScreen() {
           <Text style={{ color: '#fff', fontSize: 26, fontWeight: '700', letterSpacing: -0.4, marginTop: 2 }}>{member?.name}</Text>
           <View style={{ flexDirection: 'row', alignSelf: 'flex-start', marginTop: 8, backgroundColor: 'rgba(255,209,0,0.18)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, alignItems: 'center', gap: 6 }}>
             <Ionicons name="ribbon" size={12} color={T.brandGold} />
-            <Text style={{ color: T.brandGold, fontSize: 11, fontWeight: '700', letterSpacing: 0.5 }}>{(member?.role ?? 'MEMBER').toUpperCase()}</Text>
+            <Text style={{ color: T.brandGold, fontSize: 11, fontWeight: '700', letterSpacing: 0.5 }}>{member?.superAdmin ? 'SUPER ADMIN' : (member?.role ?? 'MEMBER').toUpperCase()}</Text>
           </View>
         </View>
       </LinearGradient>
@@ -198,6 +198,13 @@ export default function HomeScreen() {
               </>
             )}
 
+            {member?.superAdmin && (
+              <>
+                <View style={{ height: 1, backgroundColor: T.line, marginVertical: 12 }} />
+                <Text style={{ color: T.inkFaint, fontSize: 10, fontWeight: '700', letterSpacing: 1, marginLeft: 4, marginBottom: 6 }}>SYSTEM</Text>
+                <MenuRow icon="shield-checkmark" label="System Admin" onPress={() => go('Admin')} />
+              </>
+            )}
             <View style={{ height: 1, backgroundColor: T.line, marginVertical: 14 }} />
             <MenuRow icon="help-circle"        label="Help & FAQ" onPress={() => go('HelpFAQ')} />
             <MenuRow icon="information-circle" label="About"      onPress={() => go('Info')} />
