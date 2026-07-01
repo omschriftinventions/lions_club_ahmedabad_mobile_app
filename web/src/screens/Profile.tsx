@@ -87,6 +87,23 @@ const EditModal: React.FC<{ member: Member; onClose: () => void; onSave: (b: any
     business: member.business ?? '', area: member.area ?? '', phone: member.phone ?? '',
     email: member.email ?? '', bio: member.bio ?? '', dob: member.dob ?? '', anniv: member.anniv ?? '', spouse: member.spouse ?? '', expertise: member.expertise ?? '', goals: member.goals ?? '', accomplishments: member.accomplishments ?? '', interests: member.interests ?? '', network: member.network ?? '', social: member.social ?? '',
   });
+  const [avatarUrl, setAvatarUrl] = useState(member.avatar_url ?? '');
+  const [uploading, setUploading] = useState(false);
+  const qc = useQueryClient();
+  const onAvatar = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      setUploading(true);
+      try {
+        const r = await api.post<{ url: string }>('/members/me/avatar', { file: reader.result as string });
+        setAvatarUrl(r.url);
+        qc.invalidateQueries({ queryKey: ['me'] });
+      } catch (err: any) { alert(err?.message || 'Upload failed'); }
+      finally { setUploading(false); }
+    };
+    reader.readAsDataURL(file);
+  };
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setF({ ...f, [k]: e.target.value });
   const submit = (e: React.FormEvent) => { e.preventDefault(); onSave(f); };
 

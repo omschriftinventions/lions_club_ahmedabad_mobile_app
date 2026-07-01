@@ -61,6 +61,7 @@ CREATE TABLE IF NOT EXISTS members (
   interests      TEXT         NULL,  -- E-GAINS: Interests
   network        TEXT         NULL,  -- E-GAINS: Network
   social         TEXT         NULL,  -- E-GAINS: Social connections
+  is_super_admin TINYINT(1)   NOT NULL DEFAULT 0,
   active        TINYINT(1)   NOT NULL DEFAULT 1,
   created_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
   updated_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

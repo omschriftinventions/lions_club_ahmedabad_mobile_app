@@ -2,9 +2,9 @@
 -- photos (gallery), district news flag, event recaps.
 SET FOREIGN_KEY_CHECKS = 0;
 
--- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
--- chat_threads â€” 1:1 DM or group thread
--- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+-- ─────────────────────────────────────────────────────────────
+-- chat_threads — 1:1 DM or group thread
+-- ─────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS chat_threads (
   id         INT UNSIGNED NOT NULL AUTO_INCREMENT,
   club_id    INT UNSIGNED NOT NULL,
@@ -41,9 +41,9 @@ CREATE TABLE IF NOT EXISTS chat_messages (
   CONSTRAINT fk_msg_sender FOREIGN KEY (sender_id) REFERENCES members(id)      ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+-- ─────────────────────────────────────────────────────────────
 -- meeting_minutes
--- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+-- ─────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS meeting_minutes (
   id          INT UNSIGNED NOT NULL AUTO_INCREMENT,
   club_id     INT UNSIGNED NOT NULL,
@@ -60,9 +60,9 @@ CREATE TABLE IF NOT EXISTS meeting_minutes (
   CONSTRAINT fk_mm_creat FOREIGN KEY (created_by) REFERENCES members(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+-- ─────────────────────────────────────────────────────────────
 -- awards
--- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+-- ─────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS awards (
   id          INT UNSIGNED NOT NULL AUTO_INCREMENT,
   club_id     INT UNSIGNED NOT NULL,
@@ -80,9 +80,9 @@ CREATE TABLE IF NOT EXISTS awards (
   CONSTRAINT fk_award_member FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
--- referrals â€” "Refer a Lion"
--- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+-- ─────────────────────────────────────────────────────────────
+-- referrals — "Refer a Lion"
+-- ─────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS referrals (
   id            INT UNSIGNED NOT NULL AUTO_INCREMENT,
   club_id       INT UNSIGNED NOT NULL,
@@ -100,9 +100,9 @@ CREATE TABLE IF NOT EXISTS referrals (
   CONSTRAINT fk_ref_by   FOREIGN KEY (referred_by) REFERENCES members(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+-- ─────────────────────────────────────────────────────────────
 -- faqs
--- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+-- ─────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS faqs (
   id         INT UNSIGNED NOT NULL AUTO_INCREMENT,
   club_id    INT UNSIGNED NOT NULL,
@@ -115,9 +115,9 @@ CREATE TABLE IF NOT EXISTS faqs (
   CONSTRAINT fk_faq_club FOREIGN KEY (club_id) REFERENCES clubs(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
--- photos â€” gallery (URL-based; S3 wiring later)
--- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+-- ─────────────────────────────────────────────────────────────
+-- photos — gallery (URL-based; S3 wiring later)
+-- ─────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS photos (
   id            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   club_id       INT UNSIGNED NOT NULL,
@@ -138,12 +138,39 @@ CREATE TABLE IF NOT EXISTS photos (
   CONSTRAINT fk_photo_by      FOREIGN KEY (uploaded_by) REFERENCES members(id)          ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
--- news.scope ('club' | 'district') â€” extend existing news instead of new table
--- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+-- ─────────────────────────────────────────────────────────────
+-- news.scope ('club' | 'district') — extend existing news instead of new table
+-- ─────────────────────────────────────────────────────────────
 ALTER TABLE news
   ADD COLUMN scope ENUM('club','district') NOT NULL DEFAULT 'club' AFTER published_at;
 
 CREATE INDEX idx_news_scope ON news(club_id, scope, published_at);
 
 SET FOREIGN_KEY_CHECKS = 1;
+
+-- ─────────────────────────────────────────────────────────────
+-- seed
+-- ─────────────────────────────────────────────────────────────
+INSERT INTO faqs (club_id, question, answer, category, sort_order) VALUES
+  (1, 'How do I update my profile?',         'Open Profile tab → Edit profile.',                       'Profile',   10),
+  (1, 'How do I RSVP to an event?',          'Events tab → tap event → choose Yes / Maybe / Can''t make it.', 'Events', 20),
+  (1, 'What do PMJF and MJF mean?',          'PMJF = Progressive Melvin Jones Fellow. MJF = Melvin Jones Fellow. LCIF donor designations.', 'About', 30),
+  (1, 'Who can publish announcements?',      'President, Secretary, and Treasurer.',                    'Roles',     40),
+  (1, 'How do referrals work?',              'Refer a Lion screen → submit candidate details. Membership Chair follows up.', 'Membership', 50)
+ON DUPLICATE KEY UPDATE question = VALUES(question);
+
+INSERT INTO awards (club_id, member_id, name, category, awarded_on, description, icon) VALUES
+  (1, 1, 'PMJF — Progressive Melvin Jones Fellow', 'LCIF',   '2019-08-12', 'Awarded for sustained contribution to LCIF.', '🏅'),
+  (1, 5, 'PMJF',                                    'LCIF',   '2020-11-30', 'Cumulative contributions.',                  '🏅'),
+  (1, NULL, 'Best Club Bulletin — District 323-H',  'District', '2024-06-15', 'Awarded at District Convention.',          '🏆'),
+  (1, NULL, '100% Attendance Banner Patch',         'District', '2023-05-20', 'Year of perfect officer attendance.',      '🎖')
+ON DUPLICATE KEY UPDATE name = VALUES(name);
+
+INSERT INTO meeting_minutes (club_id, title, meeting_date, attendees, body, created_by) VALUES
+  (1, 'Board Meeting — May 2026',  '2026-05-06', 9, 'Discussed Charter Night. Budget approved for eye camp. New member induction Jun 14.', 1),
+  (1, 'Stated Meeting — Apr 2026', '2026-04-15', 22, 'Service Chair shared impact: 320 cataract surgeries to date. Treasurer presented Q4 statement.', 2)
+ON DUPLICATE KEY UPDATE title = VALUES(title);
+
+INSERT INTO news (club_id, title, tag, excerpt, body, published_at, scope) VALUES
+  (1, 'District 323-H Annual Convention dates announced', 'District', 'Convention scheduled for September 12-14 in Surat. Registration opens July 1.', 'Full convention agenda to be circulated by July. Early-bird registration ends July 31.', NOW() - INTERVAL 2 DAY, 'district'),
+  (1, 'New service grant from LCIF for vision program',  'District', 'LCIF approves ₹18L for district-wide vision restoration project.', 'All clubs in 323-H invited to participate in screening drives Aug-Oct.', NOW() - INTERVAL 5 DAY, 'district');
