@@ -34,6 +34,13 @@ const P: Record<string, string> = {
   globe: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm-9-9h18M12 3c2.5 2.5 2.5 13 0 18M12 3c-2.5 2.5-2.5 13 0 18',
   user: 'M16 19v-1a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v1M10 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z',
   back: 'M15 6l-6 6 6 6',
+mic: 'M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm0 0v6M9 21h6',
+share: 'M18 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM6 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm12 7a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM8.6 13.5l6.8 3M15.4 7.5l-6.8 3',
+download: 'M12 3v12M7 10l5 5 5-5M5 21h14',
+play: 'M8 5v14l11-7z',
+pause: 'M8 5h3v14H8zM14 5h3v14h-3z',
+stop: 'M6 6h12v12H6z',
+trash: 'M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14',
 };
 
 export const Icon: React.FC<{ name: string; size?: number; className?: string }> = ({ name, size = 20, className }) => (

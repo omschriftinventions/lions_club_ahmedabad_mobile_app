@@ -31,6 +31,7 @@ export default function AdminScreen() {
 
   const setMethodM = useMutation({ mutationFn: (m: Method) => api.post('/admin/auth/method', { method: m }), onSuccess: () => load() });
   const restart = useMutation({ mutationFn: () => api.post('/admin/whatsapp/restart', {}), onSuccess: () => load() });
+  const logoutWa = useMutation({ mutationFn: () => api.post('/admin/whatsapp/logout', {}), onSuccess: () => load() });
 
   if (!member?.superAdmin) {
     return (
@@ -81,7 +82,10 @@ export default function AdminScreen() {
             <Text style={{ color: T.danger, fontSize: 13 }}>WhatsApp module not installed. Run: cd server && npm install, then restart the server.</Text>
           ) : (
             <View style={{ alignItems: 'center' }}>
-              <View style={{ marginBottom: 10 }}><Pill label={`Status: ${wa.status}`} color={statusTone(wa.status)} /></View>
+              <View style={{ flexDirection: "row", gap: 8, marginBottom: 10 }}>
+                <Pill label={`Status: ${wa.status}`} color={statusTone(wa.status)} />
+                {wa.reconnects > 0 && <Pill label={`Reconnects: ${wa.reconnects}`} color={T.inkMute} />}
+              </View>
               {wa.status === 'open' ? (
                 <Text style={{ color: T.inkMute, fontSize: 13, textAlign: 'center' }}>WhatsApp is connected and ready to send OTPs.</Text>
               ) : wa.qr ? (

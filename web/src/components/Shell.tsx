@@ -18,6 +18,7 @@ const NAV = [
   { section: 'Connect', items: [
     { to: '/chats', label: 'Chats', icon: 'chat' },
     { to: '/minutes', label: 'Meeting Minutes', icon: 'doc' },
+    { to: '/meetings', label: 'AI Meeting Assistant', icon: 'mic' },
     { to: '/notifications', label: 'Notifications', icon: 'bell' },
   ]},
   { section: 'Directory', items: [

@@ -24,6 +24,7 @@ export default function Admin() {
 
   const setMethodM = useMutation({ mutationFn: (m: Method) => api.post('/admin/auth/method', { method: m }), onSuccess: () => load() });
   const restart = useMutation({ mutationFn: () => api.post('/admin/whatsapp/restart', {}), onSuccess: () => load() });
+  const logoutWa = useMutation({ mutationFn: () => api.post('/admin/whatsapp/logout', {}), onSuccess: () => load() });
 
   if (!member?.superAdmin) {
     return <div className="card pad"><div className="empty"><div className="ic"><Icon name="settings" size={38} /></div><div style={{ fontWeight: 700 }}>Super admin access required</div><div className="muted">Only super admins can manage authentication.</div></div></div>;
@@ -62,15 +63,20 @@ export default function Admin() {
           <div className="pill red">WhatsApp module not installed. Run <code>cd server &amp;&amp; npm install</code>, then restart the server.</div>
         ) : (
           <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '12px 0' }}>
-              <Pill tone={wa.status === 'open' ? 'green' : wa.status === 'qr' ? 'gold' : 'gray'}>Status: {wa.status}</Pill>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '12px 0', flexWrap: 'wrap' }}>
+              <Pill tone={wa.status === 'open' ? 'green' : wa.status === 'qr' ? 'gold' : wa.status === 'error' || wa.status === 'closed' ? 'red' : 'gray'}>Status: {wa.status}</Pill>
+              {wa.reconnects > 0 && <Pill tone="gray">Reconnects: {wa.reconnects}</Pill>}
             </div>
             {wa.status === 'open' ? <div className="muted">WhatsApp connected and ready.</div>
               : wa.qr ? <img src={wa.qr} alt="WhatsApp QR" style={{ width: 260, height: 260, borderRadius: 12, background: '#fff', padding: 10 }} />
               : <div className="muted">Waiting for QR…</div>}
             <div className="btn-row" style={{ marginTop: 14 }}>
-              <button className="btn outline" onClick={() => restart.mutate()} disabled={restart.isPending}><Icon name="settings" size={16} /> Reconnect / new QR</button>
+              <button className="btn primary" onClick={() => restart.mutate()} disabled={restart.isPending || logoutWa.isPending}><Icon name="settings" size={16} /> Reconnect</button>
+              <button className="btn outline" onClick={() => logoutWa.mutate()} disabled={restart.isPending || logoutWa.isPending}><Icon name="trash" size={16} /> Clear session &amp; new QR</button>
             </div>
+            {(wa.status === 'closed' || wa.status === 'error') && (
+              <div className="hint" style={{ marginTop: 10, color: 'var(--red)' }}>Connection lost. Try <b>Reconnect</b> first. If that fails, use <b>Clear session &amp; new QR</b> and re-scan.</div>
+            )}
           </>
         )}
         <div className="hint" style={{ marginTop: 14 }}>Unofficial WhatsApp Web link (interim). For production, prefer SMS or the official WhatsApp Business API, and run this always-on bot on a VPS.</div>

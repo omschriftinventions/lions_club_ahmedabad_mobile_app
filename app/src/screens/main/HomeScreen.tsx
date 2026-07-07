@@ -179,6 +179,7 @@ export default function HomeScreen() {
             <MenuRow icon="heart-circle"    label="Service impact"   onPress={() => go('ServiceContent', {})} />
             <MenuRow icon="images"          label="Photo gallery"    onPress={() => go('PhotoGallery')} />
             <MenuRow icon="document-text"   label="Meeting minutes"  onPress={() => go('MeetingMinutes')} />
+<MenuRow icon="mic"              label="AI Meeting Assistant" onPress={() => go('MeetingList')} />
             <MenuRow icon="trophy"          label="Awards wall"      onPress={() => go('AwardsWall')} />
             <MenuRow icon="globe"           label="District news"    onPress={() => go('DistrictNews')} />
             <MenuRow icon="person-add"      label="Refer a Lion"     onPress={() => go('ReferLion')} />

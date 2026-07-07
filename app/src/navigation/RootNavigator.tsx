@@ -32,6 +32,10 @@ import LogProjectScreen from '../screens/main/LogProjectScreen';
 import PhotoGalleryScreen from '../screens/main/PhotoGalleryScreen';
 import PastEventRecapScreen from '../screens/main/PastEventRecapScreen';
 import AdminScreen from '../screens/main/AdminScreen';
+import MeetingListScreen from '../screens/main/MeetingListScreen';
+import MeetingDetailScreen from '../screens/main/MeetingDetailScreen';
+import MeetingRecorderScreen from '../screens/main/MeetingRecorderScreen';
+import MeetingUploadScreen from '../screens/main/MeetingUploadScreen';
 
 export type RootStackParamList = {
   Main: undefined;
@@ -64,6 +68,10 @@ export type RootStackParamList = {
   PhotoGallery: undefined;
   PastEventRecap: { id: number };
   Admin: undefined;
+  MeetingList: undefined;
+  MeetingDetail: { id: number };
+  MeetingRecorder: undefined;
+  MeetingUpload: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -103,6 +111,10 @@ export default function RootNavigator() {
       <Stack.Screen name="PhotoGallery" component={PhotoGalleryScreen} />
       <Stack.Screen name="PastEventRecap" component={PastEventRecapScreen} />
       <Stack.Screen name="Admin" component={AdminScreen} />
+      <Stack.Screen name="MeetingList" component={MeetingListScreen} />
+      <Stack.Screen name="MeetingDetail" component={MeetingDetailScreen} />
+      <Stack.Screen name="MeetingRecorder" component={MeetingRecorderScreen} />
+      <Stack.Screen name="MeetingUpload" component={MeetingUploadScreen} />
     </Stack.Navigator>
   );
 }

@@ -1,4 +1,4 @@
-﻿import 'dotenv/config';
+import 'dotenv/config';
 import path from 'path';
 
 function need(name: string, fallback?: string): string {
@@ -31,8 +31,6 @@ export const config = {
     ttlSeconds: Number(process.env.OTP_TTL_SECONDS ?? 300),
     maxAttempts: Number(process.env.OTP_MAX_ATTEMPTS ?? 5),
     devLog: (process.env.OTP_DEV_LOG ?? 'true') === 'true',
-    // DEV ONLY: skips OTP code check. Any 6-digit code accepted for any
-    // phone present in `members`. NEVER enable in production.
     devBypass: (process.env.DEV_BYPASS_OTP ?? 'false') === 'true',
   },
 
@@ -50,10 +48,21 @@ export const config = {
     origins: (process.env.CORS_ORIGINS ?? '').split(',').map(s => s.trim()).filter(Boolean),
   },
 
+  ai: {
+    baseUrl: process.env.AI_BASE_URL || 'https://openrouter.ai/api/v1',
+    chatModel: process.env.AI_CHAT_MODEL || 'anthropic/claude-haiku-4.5',
+    chatModelFallback: process.env.AI_CHAT_MODEL_FALLBACK || 'nvidia/nemotron-3-super-120b-a12b:free',
+    apiKey: process.env.AI_API_KEY || '',
+  },
+
+  stt: {
+    baseUrl: process.env.STT_BASE_URL || 'https://api.groq.com/openai/v1/audio/transcriptions',
+    apiKey: process.env.STT_API_KEY || '',
+    model: process.env.STT_MODEL || 'whisper-large-v3',
+  },
+
   uploads: {
-    // Absolute dir where uploaded photos are written. Default: <cwd>/uploads/photos
     dir: process.env.UPLOADS_DIR ?? path.resolve(process.cwd(), 'uploads', 'photos'),
-    // Public base used to build photo URLs. If empty, derived from the request host.
     publicBaseUrl: (process.env.PUBLIC_BASE_URL ?? '').replace(/\/+$/, ''),
   },
 };

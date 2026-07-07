@@ -40,7 +40,9 @@
           "icon": "./assets/notification-icon.png",
           "color": "#FFD100"
         }
-      ]
+      ],
+      "expo-audio",
+      "expo-document-picker"
     ],
     "extra": {
       "apiBaseUrl": "https://api.lionsclubofahmedabadhost.com",
