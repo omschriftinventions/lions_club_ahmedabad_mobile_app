@@ -32,6 +32,7 @@ import LogProjectScreen from '../screens/main/LogProjectScreen';
 import PhotoGalleryScreen from '../screens/main/PhotoGalleryScreen';
 import PastEventRecapScreen from '../screens/main/PastEventRecapScreen';
 import AdminScreen from '../screens/main/AdminScreen';
+import AdManagementScreen from '../screens/main/AdManagementScreen';
 import MeetingListScreen from '../screens/main/MeetingListScreen';
 import MeetingDetailScreen from '../screens/main/MeetingDetailScreen';
 import MeetingRecorderScreen from '../screens/main/MeetingRecorderScreen';

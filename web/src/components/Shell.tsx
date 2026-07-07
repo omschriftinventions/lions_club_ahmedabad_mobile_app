@@ -45,6 +45,7 @@ const OFFICER_NAV = [
 
 const SUPER_NAV = [
   { to: '/admin', label: 'System Admin', icon: 'settings' },
+  { to: '/ads', label: 'Advertisements', icon: 'image' },
 ];
 
 export const Shell: React.FC<{ children: React.ReactNode }> = ({ children }) => {

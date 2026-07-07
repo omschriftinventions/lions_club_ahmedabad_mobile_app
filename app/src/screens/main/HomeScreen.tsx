@@ -12,6 +12,8 @@ import { Pill } from '../../components/Pill';
 import { api } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 import { T } from '../../theme/tokens';
+import { AdCarousel } from '../../components/AdCarousel';
+import { Linking } from 'react-native';
 
 interface ImpactRow { id: string; name: string; icon: string; color: string; units: number; amount_inr: number; }
 interface EventRow { id: number; title: string; type: string; starts_at: string; venue: string; going: number; my_status: string | null; }
@@ -98,6 +100,11 @@ export default function HomeScreen() {
               ))}
           </View>
         </Card>
+      </View>
+
+      {/* Advertisements */}
+      <View style={{ paddingHorizontal: 0, paddingTop: 12, paddingBottom: 4 }}>
+        <AdCarousel placement="dashboard" onPressLink={(url) => Linking.openURL(url).catch(() => {})} />
       </View>
 
       {/* Upcoming events */}
@@ -204,6 +211,7 @@ export default function HomeScreen() {
                 <View style={{ height: 1, backgroundColor: T.line, marginVertical: 12 }} />
                 <Text style={{ color: T.inkFaint, fontSize: 10, fontWeight: '700', letterSpacing: 1, marginLeft: 4, marginBottom: 6 }}>SYSTEM</Text>
                 <MenuRow icon="shield-checkmark" label="System Admin" onPress={() => go('Admin')} />
+<MenuRow icon="images" label="Advertisements" onPress={() => go('AdManagement')} />
               </>
             )}
             <View style={{ height: 1, backgroundColor: T.line, marginVertical: 14 }} />

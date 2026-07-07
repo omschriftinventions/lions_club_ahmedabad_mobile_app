@@ -7,6 +7,8 @@ import { useAuth } from '../../lib/auth';
 import { api } from '../../lib/api';
 import { Button } from '../../components/Button';
 import { T } from '../../theme/tokens';
+import { AdCarousel } from '../../components/AdCarousel';
+import { Linking } from 'react-native';
 import type { AuthStackParamList } from '../../navigation/AuthStack';
 
 type Method = 'password' | 'sms' | 'whatsapp' | null;
@@ -77,6 +79,11 @@ export default function PhoneScreen() {
             <Button label={method === 'password' ? 'Sign in' : 'Send OTP'} onPress={method === 'password' ? submitPassword : submitOtp} loading={loading} style={{ marginTop: 18 }} />
           </View>
         )}
+
+        {/* Advertisements on login */}
+        <View style={{ marginTop: 20 }}>
+          <AdCarousel placement="login" onPressLink={(url) => Linking.openURL(url).catch(() => {})} />
+        </View>
       </KeyboardAvoidingView>
     </LinearGradient>
   );

@@ -58,7 +58,16 @@
       "Bash(npx eas-cli@latest build:view ce242975-7a37-4d7b-87dd-a847d5e1fc4b)",
       "WebFetch(domain:omsinv.com)",
       "Bash(curl -sL -o omsinv-logo.jpeg \"https://omsinv.com/Full_Logo.jpeg\")",
-      "Bash(powershell -Command \"[Convert]::ToBase64String\\([IO.File]::ReadAllBytes\\('omsinv-logo.jpeg'\\)\\)\")"
+      "Bash(powershell -Command \"[Convert]::ToBase64String\\([IO.File]::ReadAllBytes\\('omsinv-logo.jpeg'\\)\\)\")",
+      "Bash(where plink *)",
+      "Bash(where sshpass *)",
+      "Bash(where ssh *)",
+      "Bash(plink -ssh root@5.189.172.74 -pw \"Ahmedabad0134\" \"echo CONNECTED && uname -a\")",
+      "Bash(plink -batch -ssh root@5.189.172.74 -pw \"Ahmedabad0134\" \"ss -tlnp | grep 3306; echo ---; docker ps 2>/dev/null | head -5; echo ---; ufw status 2>/dev/null | head -10\")",
+      "Bash(plink -batch -ssh root@5.189.172.74 -pw \"Ahmedabad0134\" \"mysql -N -e \\\\\"SELECT user, host FROM mysql.user WHERE user IN \\('lions','root'\\);\\\\\" 2>/dev/null || mysql -u root -e \\\\\"SELECT user, host FROM mysql.user WHERE user IN \\('lions','root'\\);\\\\\"\")",
+      "Bash(plink -batch -ssh root@5.189.172.74 -pw \"Ahmedabad0134\" \"find / -maxdepth 4 -name '.env' -path '*server*' 2>/dev/null; find /root /home /var/www /opt -maxdepth 3 -name '.env' 2>/dev/null | head -10\")",
+      "Bash(plink -batch -ssh root@5.189.172.74 -pw \"Ahmedabad0134\" \"find / -name '.env' -not -path '*/node_modules/*' -not -path '/proc/*' -not -path '/sys/*' 2>/dev/null | head -20\")",
+      "Bash(plink -batch -ssh root@5.189.172.74 -pw \"Ahmedabad0134\" \"grep -E '^DB_' /var/www/lionsclub/lions_club_ahmedabad_mobile_app/server/.env\")"
     ]
   }
 }

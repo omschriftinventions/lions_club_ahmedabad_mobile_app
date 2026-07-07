@@ -35,6 +35,7 @@ import Settings from './screens/Settings';
 import Admin from './screens/Admin';
 import Meetings from './screens/Meetings';
 import MeetingDetail from './screens/MeetingDetail';
+import AdManagement from './screens/AdManagement';
 
 export default function App() {
   const { access, hydrate, ready } = useAuth();
@@ -78,6 +79,7 @@ export default function App() {
         <Route path="/admin" element={<Admin />} />
         <Route path="/meetings" element={<Meetings />} />
         <Route path="/meetings/:id" element={<MeetingDetail />} />
+        <Route path="/ads" element={<AdManagement />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Shell>

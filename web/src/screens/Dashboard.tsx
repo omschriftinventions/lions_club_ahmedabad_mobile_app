@@ -7,6 +7,7 @@ import { Icon } from '../components/Icon';
 import { Avatar } from '../components/Avatar';
 import { Spinner, EmptyState, Pill, fmtDateTime } from '../components/ui';
 import type { ImpactRow, ClubEvent, NewsItem } from '../types';
+import { AdCarousel } from '../components/AdCarousel';
 
 export default function Dashboard() {
   const nav = useNavigate();
@@ -53,6 +54,10 @@ export default function Dashboard() {
           <div className="v">{upcomingCount}</div>
           <div className="d">in the calendar</div>
         </div>
+      </div>
+
+      <div style={{ marginBottom: 20 }}>
+        <AdCarousel placement="dashboard" />
       </div>
 
       {member?.canEdit && (

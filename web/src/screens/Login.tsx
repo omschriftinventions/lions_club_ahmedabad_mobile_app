@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../lib/auth';
 import { api } from '../lib/api';
 import { Icon } from '../components/Icon';
+import { AdCarousel } from '../components/AdCarousel';
 
 type Method = 'password' | 'sms' | 'whatsapp' | null;
 
@@ -31,6 +32,7 @@ const Shell: React.FC<{ children: React.ReactNode }> = ({ children }) => (
         <p>Member portal for events, news, the club roster and service impact. Sign in with your registered phone number.</p>
       </div>
       <div style={{ color: 'rgba(255,255,255,.5)', fontSize: 12 }}>District 3232 B1</div>
+      <div style={{ marginTop: 20, maxWidth: 380 }}><AdCarousel placement="login" /></div>
     </div>
     <div className="login-form"><div className="login-card">{children}</div></div>
   </div>

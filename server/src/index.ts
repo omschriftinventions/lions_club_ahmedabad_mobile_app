@@ -29,6 +29,7 @@ import faqs from "./routes/faqs";
 import photos from "./routes/photos";
 import admin from "./routes/admin";
 import meetings from "./routes/meetings";
+import advertisements from "./routes/advertisements";
 
 export const app = express();
 
@@ -64,6 +65,7 @@ app.use("/faqs", faqs);
 app.use("/photos", photos);
 app.use("/admin", admin);
 app.use("/meetings", meetings);
+app.use("/advertisements", advertisements);
 
 app.use(notFound);
 app.use(errorHandler);
