@@ -18,7 +18,8 @@
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "Select photos to upload to your profile and the club gallery.",
         "NSCameraUsageDescription": "Take photos for your profile and the club gallery.",
-        "NSMicrophoneUsageDescription": "Required for video recording if used with the camera."
+        "NSMicrophoneUsageDescription": "Required for video recording if used with the camera.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {

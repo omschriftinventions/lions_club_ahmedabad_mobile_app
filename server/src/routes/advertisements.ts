@@ -69,7 +69,7 @@ router.get("/", requireAuth, async (req: AuthedRequest, res) => {
 });
 
 // ── GET /advertisements/all — full list for admin (including inactive) ──
-router.get("/all", requireSuperAdmin, async (req: AuthedRequest, res) => {
+router.get("/all", requireAuth, requireSuperAdmin, async (req: AuthedRequest, res) => {
   const rows = await query<RowDataPacket[]>(
     "SELECT * FROM advertisements WHERE club_id = ? ORDER BY sort_order, id",
     [req.user!.clubId]
@@ -94,7 +94,7 @@ const uploadBody = z.object({
   sort_order: z.number().int().optional().default(0),
 });
 
-router.post("/upload", requireSuperAdmin, async (req: AuthedRequest, res) => {
+router.post("/upload", requireAuth, requireSuperAdmin, async (req: AuthedRequest, res) => {
   const data = uploadBody.parse(req.body);
   const match = data.file.match(/^data:(image\/[a-z+]+);base64,([A-Za-z0-9+/=]+)$/i);
   if (!match) throw new HttpError(400, "invalid_image", "expected a data:image/...;base64,... payload");
@@ -131,7 +131,7 @@ const updateBody = z.object({
   link_url:   z.string().max(500).optional().nullable(),
 }).partial();
 
-router.patch("/:id", requireSuperAdmin, async (req: AuthedRequest, res) => {
+router.patch("/:id", requireAuth, requireSuperAdmin, async (req: AuthedRequest, res) => {
   const id = z.coerce.number().int().parse(req.params.id);
   const data = updateBody.parse(req.body);
   const sets: string[] = [];
@@ -148,7 +148,7 @@ router.patch("/:id", requireSuperAdmin, async (req: AuthedRequest, res) => {
 });
 
 // ── DELETE /advertisements/:id — delete ad and file ──
-router.delete("/:id", requireSuperAdmin, async (req: AuthedRequest, res) => {
+router.delete("/:id", requireAuth, requireSuperAdmin, async (req: AuthedRequest, res) => {
   const id = z.coerce.number().int().parse(req.params.id);
   const rows = await query<RowDataPacket[]>(
     "SELECT image_url FROM advertisements WHERE id = ? AND club_id = ?", [id, req.user!.clubId]

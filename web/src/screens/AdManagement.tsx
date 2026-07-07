@@ -36,6 +36,7 @@ export default function AdManagement() {
     mutationFn: (params: { file: string; title: string; placement: Placement; link_url?: string | null }) =>
       api.post<{ id: number; url: string }>("/advertisements/upload", params),
     onSuccess: () => { refetch(); setShowUpload(false); setFile(null); setTitle(""); setLinkUrl(""); setFileName(""); },
+    onError: (e: any) => { alert("Upload failed: " + (e?.message || "Unknown error")); },
   });
 
   const toggleMut = useMutation({
@@ -53,6 +54,7 @@ export default function AdManagement() {
   const deleteMut = useMutation({
     mutationFn: (id: number) => api.delete("/advertisements/" + id),
     onSuccess: () => refetch(),
+    onError: (e: any) => { alert("Delete failed: " + (e?.message || "Unknown error")); },
   });
 
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
