@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     elevation: 3,
   },
-  adImage: { width: "100%", height: 160, resizeMode: "contain" },
+  adImage: { width: "100%", height: 220, resizeMode: "contain" },
   titleBar: {
     position: "absolute", bottom: 0, left: 0, right: 0,
     backgroundColor: "rgba(0,31,69,0.75)",
