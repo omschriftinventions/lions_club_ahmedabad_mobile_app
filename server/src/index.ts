@@ -35,7 +35,10 @@ export const app = express();
 
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: false,
+}));
 app.use(cors({ origin: config.cors.origins.length ? config.cors.origins : true, credentials: false }));
 app.use(express.json({ limit: "120mb" }));
 if (config.env !== "production") app.use(morgan("dev"));
