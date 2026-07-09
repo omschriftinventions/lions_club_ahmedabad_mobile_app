@@ -1,8 +1,8 @@
-﻿import React, { useState, useRef, useEffect } from "react";
-import { View, Text, Pressable, StyleSheet, Alert } from "react-native";
+import React, { useState, useRef, useEffect } from "react";
+import { View, Text, Pressable, StyleSheet, Alert, TextInput } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import { useAudioRecorder, RecordingPresets } from "expo-audio";
+import { useAudioRecorder, RecordingPresets, requestRecordingPermissionsAsync, getRecordingPermissionsAsync, setAudioModeAsync, PermissionStatus } from "expo-audio";
 import * as FileSystem from "expo-file-system/legacy";
 import { Screen } from "../../components/Screen";
 import { Button } from "../../components/Button";
@@ -38,7 +38,26 @@ export default function MeetingRecorderScreen() {
       return;
     }
     try {
-      await recorder.record();
+      // Microphone permission is required before recording on iOS and Android.
+      const cur = await getRecordingPermissionsAsync();
+      let status = cur.status;
+      if (status !== PermissionStatus.GRANTED) {
+        const req = await requestRecordingPermissionsAsync();
+        status = req.status;
+      }
+      if (status !== PermissionStatus.GRANTED) {
+        Alert.alert("Microphone blocked", "Microphone access is required to record meetings. Please enable it in Settings.");
+        return;
+      }
+      // iOS needs the audio session configured for recording before record() runs.
+      await setAudioModeAsync({
+        allowsRecording: true,
+        playsInSilentMode: true,
+        interruptionMode: "doNotMix",
+        shouldPlayInBackground: false,
+      });
+      await recorder.prepareToRecordAsync();
+      recorder.record();
       setPhase("recording");
       setSeconds(0);
       setPaused(false);
@@ -68,14 +87,17 @@ export default function MeetingRecorderScreen() {
     try {
       await recorder.stop();
       stopTimer();
+      setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true, interruptionMode: "doNotMix", shouldPlayInBackground: false }).catch(() => {});
       setPhase("done");
     } catch (e: any) {
       console.warn("[recorder] stop error", e);
+      setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true, interruptionMode: "doNotMix", shouldPlayInBackground: false }).catch(() => {});
       setPhase("done");
     }
   };
 
   const handleCancel = () => {
+    setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true, interruptionMode: "doNotMix", shouldPlayInBackground: false }).catch(() => {});
     if (timerRef.current) clearInterval(timerRef.current);
     setPhase("setup");
     setSeconds(0);
@@ -98,6 +120,11 @@ export default function MeetingRecorderScreen() {
 
       // Read file as base64
       const fileInfo = await FileSystem.getInfoAsync(recorder.uri);
+      if (!fileInfo.exists) {
+        Alert.alert("No recording file", "The recording file could not be found. Please record the meeting again.");
+        setUploading(false);
+        return;
+      }
       const base64 = await FileSystem.readAsStringAsync(recorder.uri, {
         encoding: FileSystem.EncodingType.Base64,
       });
@@ -203,8 +230,6 @@ export default function MeetingRecorderScreen() {
     </Screen>
   );
 }
-
-import { TextInput } from "react-native";
 
 const styles = StyleSheet.create({
   label: { fontSize: T.fs.label, fontWeight: "700", color: T.inkMute, marginBottom: 8, letterSpacing: 0.5 },

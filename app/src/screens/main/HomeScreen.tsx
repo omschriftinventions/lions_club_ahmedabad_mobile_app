@@ -217,6 +217,7 @@ export default function HomeScreen() {
             <View style={{ height: 1, backgroundColor: T.line, marginVertical: 14 }} />
             <MenuRow icon="help-circle"        label="Help & FAQ" onPress={() => go('HelpFAQ')} />
             <MenuRow icon="information-circle" label="About"      onPress={() => go('Info')} />
+            <MenuRow icon="time" label="History" onPress={() => go('History')} />
             <MenuRow icon="log-out" label="Sign out" color={T.danger} onPress={() => { closeMenu(); logout(); }} />
           </Pressable>
         </Pressable>

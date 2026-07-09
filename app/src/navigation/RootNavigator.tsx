@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../lib/auth';
 import AuthStack from './AuthStack';
@@ -32,11 +32,12 @@ import LogProjectScreen from '../screens/main/LogProjectScreen';
 import PhotoGalleryScreen from '../screens/main/PhotoGalleryScreen';
 import PastEventRecapScreen from '../screens/main/PastEventRecapScreen';
 import AdminScreen from '../screens/main/AdminScreen';
-import AdManagementScreen from '../screens/main/AdManagementScreen';
+import AdManagementLazy from '../screens/main/AdManagementLazy';
 import MeetingListScreen from '../screens/main/MeetingListScreen';
 import MeetingDetailScreen from '../screens/main/MeetingDetailScreen';
-import MeetingRecorderScreen from '../screens/main/MeetingRecorderScreen';
-import MeetingUploadScreen from '../screens/main/MeetingUploadScreen';
+import MeetingRecorderLazy from '../screens/main/MeetingRecorderLazy';
+import MeetingUploadLazy from '../screens/main/MeetingUploadLazy';
+import HistoryScreen from '../screens/main/HistoryScreen';
 
 export type RootStackParamList = {
   Main: undefined;
@@ -73,6 +74,7 @@ export type RootStackParamList = {
   MeetingDetail: { id: number };
   MeetingRecorder: undefined;
   MeetingUpload: undefined;
+  History: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -114,8 +116,9 @@ export default function RootNavigator() {
       <Stack.Screen name="Admin" component={AdminScreen} />
       <Stack.Screen name="MeetingList" component={MeetingListScreen} />
       <Stack.Screen name="MeetingDetail" component={MeetingDetailScreen} />
-      <Stack.Screen name="MeetingRecorder" component={MeetingRecorderScreen} />
-      <Stack.Screen name="MeetingUpload" component={MeetingUploadScreen} />
+      <Stack.Screen name="MeetingRecorder" component={MeetingRecorderLazy} />
+      <Stack.Screen name="MeetingUpload" component={MeetingUploadLazy} />
+      <Stack.Screen name="History" component={HistoryScreen} />
     </Stack.Navigator>
   );
 }

@@ -31,6 +31,8 @@ import Charter from './screens/Charter';
 import DistrictNews from './screens/DistrictNews';
 import Help from './screens/Help';
 import About from './screens/About';
+import History from './screens/History';
+import HistoryAdmin from './screens/HistoryAdmin';
 import Settings from './screens/Settings';
 import Admin from './screens/Admin';
 import Meetings from './screens/Meetings';
@@ -75,6 +77,8 @@ export default function App() {
         <Route path="/district-news" element={<DistrictNews />} />
         <Route path="/help" element={<Help />} />
         <Route path="/about" element={<About />} />
+        <Route path="/history" element={<History />} />
+        <Route path="/history-admin" element={<HistoryAdmin />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/meetings" element={<Meetings />} />

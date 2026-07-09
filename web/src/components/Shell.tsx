@@ -30,6 +30,7 @@ const NAV = [
   { section: 'Info', items: [
     { to: '/district-news', label: 'District News', icon: 'globe' },
     { to: '/help', label: 'Help & FAQ', icon: 'help' },
+    { to: '/history', label: 'History', icon: 'history' },
     { to: '/about', label: 'About', icon: 'news' },
     { to: '/settings', label: 'Settings', icon: 'settings' },
   ]},
@@ -46,6 +47,7 @@ const OFFICER_NAV = [
 const SUPER_NAV = [
   { to: '/admin', label: 'System Admin', icon: 'settings' },
   { to: '/ads', label: 'Advertisements', icon: 'image' },
+  { to: '/history-admin', label: 'Manage History', icon: 'history' },
 ];
 
 export const Shell: React.FC<{ children: React.ReactNode }> = ({ children }) => {

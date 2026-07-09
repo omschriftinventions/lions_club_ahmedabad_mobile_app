@@ -2,7 +2,7 @@
   "expo": {
     "name": "Lions Club Ahmedabad Host",
     "slug": "lionsclub-ahmedabad",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "scheme": "lionsclub",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -18,7 +18,7 @@
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "Select photos to upload to your profile and the club gallery.",
         "NSCameraUsageDescription": "Take photos for your profile and the club gallery.",
-        "NSMicrophoneUsageDescription": "Required for video recording if used with the camera.",
+        "NSMicrophoneUsageDescription": "Required to record meeting audio for AI transcription and summaries.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -30,7 +30,8 @@
       },
       "permissions": [
         "NOTIFICATIONS",
-        "NOTIFICATIONS"
+        "RECORD_AUDIO",
+        "MODIFY_AUDIO_SETTINGS"
       ]
     },
     "plugins": [
@@ -42,8 +43,12 @@
           "color": "#FFD100"
         }
       ],
-      "expo-audio",
-      "expo-document-picker"
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Required to record meeting audio for AI transcription and summaries."
+        }
+      ]
     ],
     "extra": {
       "apiBaseUrl": "https://api.lionsclubofahmedabadhost.com",

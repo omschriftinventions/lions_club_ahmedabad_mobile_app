@@ -1,7 +1,8 @@
-﻿import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { View, Text, FlatList, Pressable, Dimensions, StyleSheet, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { T } from "../theme/tokens";
+import { api } from "../lib/api";
 
 interface AdItem {
   id: number;
@@ -26,11 +27,9 @@ export const AdCarousel: React.FC<{ placement: "dashboard" | "login"; onPressLin
     let cancelled = false;
     const load = async () => {
       try {
-        const API_BASE = (process.env as any).EXPO_PUBLIC_API_URL || "http://localhost:4000";
-        const res = await fetch(API_BASE + "/advertisements/public?placement=" + placement);
-        const data = await res.json() as { ads: AdItem[] };
+        const data = await api.get<{ ads: AdItem[] }>("/advertisements/public?placement=" + placement);
         if (!cancelled) setAds(data.ads || []);
-      } catch { /* silent */ }
+      } catch (e) { console.warn("[AdCarousel] load failed for " + placement + ":", e); }
     };
     load();
     return () => { cancelled = true; };

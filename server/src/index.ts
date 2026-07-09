@@ -1,4 +1,4 @@
-﻿import express from "express";
+import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
@@ -30,6 +30,7 @@ import photos from "./routes/photos";
 import admin from "./routes/admin";
 import meetings from "./routes/meetings";
 import advertisements from "./routes/advertisements";
+import content from "./routes/content";
 
 export const app = express();
 
@@ -69,6 +70,7 @@ app.use("/photos", photos);
 app.use("/admin", admin);
 app.use("/meetings", meetings);
 app.use("/advertisements", advertisements);
+app.use("/content", content);
 
 app.use(notFound);
 app.use(errorHandler);
