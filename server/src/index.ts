@@ -8,7 +8,7 @@ import { config } from "./config";
 import { pingDb } from "./db";
 import { notFound, errorHandler } from "./middleware/error";
 import * as wa from "./providers/whatsapp";
-import { ensureSchema } from "./settings";
+import { ensureSchema, ensureCmsSchema } from "./settings";
 import { ensureAuthSchema } from "./utils/password";
 
 import auth from "./routes/auth";
@@ -76,6 +76,7 @@ app.use(notFound);
 app.use(errorHandler);
 
 ensureSchema().catch(() => {});
+ensureCmsSchema().catch(() => {});
 ensureAuthSchema().catch(() => {});
 wa.start().catch((e) => console.error("[wa] init failed", e));
 

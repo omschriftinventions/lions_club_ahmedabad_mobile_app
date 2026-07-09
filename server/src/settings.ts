@@ -25,3 +25,17 @@ export async function setSetting(key: string, value: string): Promise<void> {
     { k: key, v: value }
   );
 }
+// Auto-create CMS pages table (admin-editable rich content, e.g. History).
+// Runs on boot so no manual migration is required.
+export async function ensureCmsSchema(): Promise<void> {
+  try {
+    await exec(`CREATE TABLE IF NOT EXISTS cms_pages (
+      slug VARCHAR(50) NOT NULL PRIMARY KEY,
+      html LONGTEXT NOT NULL,
+      updated_by INT UNSIGNED NULL,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      CONSTRAINT fk_cms_creator FOREIGN KEY (updated_by) REFERENCES members(id) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
+    await exec(`INSERT IGNORE INTO cms_pages (slug, html) VALUES ('history', '<p>The history of Lions Club of Ahmedabad Host will appear here once an admin publishes it.</p>')`);
+  } catch (e: any) { console.error('[settings] ensureCmsSchema failed', e?.message || e); }
+}
