@@ -27,3 +27,4 @@ server/wa-auth/
 
 # TypeScript build info
 *.tsbuildinfo
+app/google-play-service-account.json
