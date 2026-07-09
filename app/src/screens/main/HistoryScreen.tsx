@@ -28,6 +28,8 @@ function wrapHtml(innerHtml: string): string {
   h3 { font-size:17px; margin:14px 0 6px; }
   p { margin:0 0 12px; }
   img { max-width:100%; height:auto; border-radius:10px; margin:8px 0; }
+  iframe { max-width:100%; border:0; border-radius:10px; }
+  embed { max-width:100%; }
   a { color:${T.brandBlue}; }
   ul,ol { margin:0 0 12px; padding-left:22px; }
   li { margin:0 0 4px; }

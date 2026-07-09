@@ -41,7 +41,7 @@ const upsert = z.object({
   title: z.string().min(2).max(200),
   tag: z.string().max(40).optional().nullable(),
   excerpt: z.string().max(400).optional().nullable(),
-  body: z.string().max(50000).optional().nullable(),
+  body: z.string().max(15 * 1024 * 1024).optional().nullable(),
   cover_url: z.string().url().optional().nullable(),
   published: z.boolean().default(true),
 });

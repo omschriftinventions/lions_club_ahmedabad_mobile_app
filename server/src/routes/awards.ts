@@ -40,6 +40,17 @@ router.post('/', requireEditor, async (req: AuthedRequest, res) => {
   res.status(201).json({ id: r.insertId });
 });
 
+const patchBody = upsert.partial();
+
+router.patch('/:id', requireEditor, async (req: AuthedRequest, res) => {
+  const id = z.coerce.number().int().parse(req.params.id);
+  const data = patchBody.parse(req.body);
+  const sets = Object.keys(data).map(k => `${k} = :${k}`);
+  if (sets.length === 0) return res.json({ ok: true });
+  await exec(`UPDATE awards SET ${sets.join(', ')} WHERE id = :id AND club_id = :clubId`, { ...data, id, clubId: req.user!.clubId });
+  res.json({ ok: true });
+});
+
 router.delete('/:id', requireEditor, async (req: AuthedRequest, res) => {
   const id = z.coerce.number().int().parse(req.params.id);
   await exec(`DELETE FROM awards WHERE id = :id AND club_id = :clubId`, { id, clubId: req.user!.clubId });

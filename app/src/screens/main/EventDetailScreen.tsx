@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ActivityIndicator, Pressable, ScrollView, Linking } from 'react-native';
+import { View, Text, ActivityIndicator, Pressable, ScrollView, Linking, Alert } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,8 @@ import { Avatar } from '../../components/Avatar';
 import { Pill } from '../../components/Pill';
 import { Button } from '../../components/Button';
 import { api } from '../../lib/api';
+import { useAuth } from '../../lib/auth';
+import { HtmlView } from '../../components/HtmlView';
 import { T } from '../../theme/tokens';
 
 export default function EventDetailScreen() {
@@ -20,12 +22,17 @@ export default function EventDetailScreen() {
     queryKey: ['event', id],
     queryFn: () => api.get<{ event: any; attendees: any[] }>(`/events/${id}`),
   });
+  const { member } = useAuth();
   const rsvp = useMutation({
     mutationFn: (status: 'yes'|'no'|'maybe') => api.put(`/events/${id}/rsvp`, { status, guests: 0 }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['event', id] });
       qc.invalidateQueries({ queryKey: ['events'] });
     },
+  });
+  const del = useMutation({
+    mutationFn: () => api.delete(`/events/${id}`),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['events'] }); nav.goBack(); },
   });
 
   if (isLoading || !data?.event) return <Screen><ActivityIndicator color={T.brandBlue} style={{ marginTop: 40 }} /></Screen>;
@@ -57,9 +64,7 @@ export default function EventDetailScreen() {
         </View>
 
         {e.description && (
-          <Card style={{ marginTop: 14 }}>
-            <Text style={{ color: T.inkSoft, lineHeight: 20 }}>{e.description}</Text>
-          </Card>
+          <HtmlView html={e.description} style={{ marginTop: 14 }} />
         )}
 
         <View style={{ flexDirection: 'row', gap: 8, marginTop: 14 }}>
@@ -79,6 +84,20 @@ export default function EventDetailScreen() {
             </View>
           ))}
         </ScrollView>
+
+        {member?.canEdit && (
+          <View style={{ marginTop: 18 }}>
+            <Button
+              label="Delete event"
+              variant="ghost"
+              onPress={() => Alert.alert('Delete event?', 'Members will no longer see it.', [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Delete', style: 'destructive', onPress: () => del.mutate() },
+              ])}
+              loading={del.isPending}
+            />
+          </View>
+        )}
       </View>
     </Screen>
   );

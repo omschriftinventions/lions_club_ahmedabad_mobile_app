@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
+import { useAuth } from '../lib/auth';
+import { richHtml } from '../lib/rich';
 import { Avatar } from '../components/Avatar';
 import { Icon } from '../components/Icon';
 import { Spinner, Pill, EmptyState, fmtDateTime } from '../components/ui';
@@ -11,6 +13,7 @@ export default function EventDetail() {
   const nav = useNavigate();
   const qc = useQueryClient();
   const [status, setStatus] = useState<'yes' | 'no' | 'maybe' | null>(null);
+  const { member } = useAuth();
 
   const { data, isLoading } = useQuery({
     enabled: !!id,
@@ -25,6 +28,11 @@ export default function EventDetail() {
     onSuccess: (_x, s) => { setStatus(s); qc.invalidateQueries({ queryKey: ['event', id] }); qc.invalidateQueries({ queryKey: ['events'] }); },
   });
 
+  const del = useMutation({
+    mutationFn: () => api.delete(`/events/${id}`),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['events'] }); nav(-1); },
+  });
+
   if (isLoading) return <Spinner />;
   if (!e) return <EmptyState icon="calendar" title="Event not found" />;
 
@@ -37,7 +45,15 @@ export default function EventDetail() {
 
   return (
     <>
-      <button className="btn ghost sm" style={{ marginBottom: 14 }} onClick={() => nav(-1)}><Icon name="back" size={16} /> Back</button>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+        <button className="btn ghost sm" onClick={() => nav(-1)}><Icon name="back" size={16} /> Back</button>
+        {member?.canEdit && (
+          <button className="btn ghost sm" style={{ color: 'var(--danger, #b3261e)' }} disabled={del.isPending}
+            onClick={() => { if (confirm('Delete this event? Members will no longer see it.')) del.mutate(); }}>
+            <Icon name="trash" size={16} /> Delete
+          </button>
+        )}
+      </div>
       <div className="card" style={{ overflow: 'hidden', marginBottom: 16 }}>
         {e.cover_url && <img className="cover" src={e.cover_url} alt="" style={{ height: 220 }} />}
         <div className="pad">
@@ -50,7 +66,7 @@ export default function EventDetail() {
             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="calendar" size={16} /> {fmtDateTime(e.starts_at)}{e.ends_at ? ` \u2013 ${fmtDateTime(e.ends_at)}` : ''}</span>
             {e.venue && <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="pin" size={16} /> {e.venue}</span>}
           </div>
-          {e.description && <div className="prose" style={{ marginTop: 16 }}><p>{e.description}</p></div>}
+          {e.description && <div className="prose" style={{ marginTop: 16 }} dangerouslySetInnerHTML={{ __html: richHtml(e.description) }} />}
         </div>
       </div>
 

@@ -1,6 +1,9 @@
 import { Router } from "express";
 import { z } from "zod";
-import pdfParse from "pdf-parse";
+import fs from "fs";
+import path from "path";
+import crypto from "crypto";
+import { config } from "../config";
 import { query, exec } from "../db";
 import { requireAuth, AuthedRequest } from "../middleware/auth";
 import { requireSuperAdmin } from "../middleware/rbac";
@@ -49,27 +52,24 @@ router.put("/:slug", requireAuth, requireSuperAdmin, async (req: AuthedRequest, 
   res.json({ ok: true });
 });
 
-// ── POST /content/import-pdf — extract text from a PDF and return it as HTML ──
-// Images inside the PDF are NOT extracted (text only); the admin can insert
-// images separately in the editor. Body: { file: "data:application/pdf;base64,..." }
-const importBody = z.object({ file: z.string().min(1).max(MAX_PDF_BYTES * 2) });
+// ── POST /content/upload-pdf — upload a PDF, store it, return a public URL ──
+// The admin embeds the returned URL in the History page so members view the
+// full PDF inline (rendered by the browser on web, by the WebView on mobile).
+// Body: { file: "data:application/pdf;base64,..." }
+const uploadBody = z.object({ file: z.string().min(1).max(MAX_PDF_BYTES * 2) });
 
-router.post("/import-pdf", requireAuth, requireSuperAdmin, async (req: AuthedRequest, res) => {
-  const data = importBody.parse(req.body);
+router.post("/upload-pdf", requireAuth, requireSuperAdmin, async (req: AuthedRequest, res) => {
+  const data = uploadBody.parse(req.body);
   const match = data.file.match(/^data:application\/pdf;base64,([A-Za-z0-9+/=]+)$/i);
   if (!match) throw new HttpError(400, "invalid_pdf", "expected data:application/pdf;base64,...");
   const buf = Buffer.from(match[1], "base64");
   if (buf.length > MAX_PDF_BYTES) throw new HttpError(413, "pdf_too_large", "max " + MAX_PDF_BYTES + " bytes");
-  try {
-    const parsed = await pdfParse(buf);
-    const text = (parsed.text || "").replace(/\r/g, "");
-    // Split into paragraphs on blank lines / form feeds (page breaks), escape HTML.
-    const paras = text.split(/\n\s*\n|\f/).map(s => s.trim()).filter(Boolean);
-    const html = paras.map(p => "<p>" + p.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br/>") + "</p>").join("\n");
-    res.json({ html });
-  } catch (e: any) {
-    throw new HttpError(400, "pdf_parse_failed", e?.message ?? "Could not read PDF");
-  }
+  const filename = crypto.randomUUID() + ".pdf";
+  const dir = path.resolve(config.uploads.dir, "..", "cms");
+  await fs.promises.mkdir(dir, { recursive: true });
+  await fs.promises.writeFile(path.join(dir, filename), buf);
+  const base = config.uploads.publicBaseUrl || (req.protocol + "://" + req.get("host"));
+  res.status(201).json({ url: base + "/uploads/cms/" + filename });
 });
 
 export default router;

@@ -39,3 +39,10 @@ export async function ensureCmsSchema(): Promise<void> {
     await exec(`INSERT IGNORE INTO cms_pages (slug, html) VALUES ('history', '<p>The history of Lions Club of Ahmedabad Host will appear here once an admin publishes it.</p>')`);
   } catch (e: any) { console.error('[settings] ensureCmsSchema failed', e?.message || e); }
 }
+// Grow event description to LONGTEXT so it can hold rich HTML with inline
+// (base64) images pasted from the rich editor. No-op if already LONGTEXT.
+export async function ensureRichContentColumns(): Promise<void> {
+  try {
+    await exec(`ALTER TABLE events MODIFY COLUMN description LONGTEXT NULL`);
+  } catch (e: any) { console.error('[settings] ensureRichContentColumns failed', e?.message || e); }
+}

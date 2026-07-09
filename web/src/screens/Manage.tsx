@@ -5,6 +5,7 @@ import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { Icon } from '../components/Icon';
 import { Field, Pill } from '../components/ui';
+import { RichEditor } from '../components/RichEditor';
 
 const EVENT_TYPES = ['Signature', 'Service', 'Meeting', 'Fellowship', 'Other'];
 
@@ -79,7 +80,7 @@ const EventForm: React.FC<{ onDone: () => void }> = ({ onDone }) => {
         <Field label="Ends (optional)"><input className="input" type="datetime-local" value={f.ends_at} onChange={set('ends_at')} /></Field>
       </div>
       <Field label="Venue"><input className="input" value={f.venue} onChange={set('venue')} placeholder="Address / location" /></Field>
-      <Field label="Description"><textarea className="textarea" value={f.description} onChange={set('description')} /></Field>
+      <Field label="Description"><RichEditor value={f.description} onChange={(h) => setF({ ...f, description: h })} minHeight={180} placeholder="Describe the event. Paste HTML, insert images or a PDF." /></Field>
       <Field label="Cover image URL (optional)"><input className="input" value={f.cover_url} onChange={set('cover_url')} placeholder="https://..." /></Field>
       {m.error && <div className="pill red" style={{ marginBottom: 12 }}>{(m.error as any).message || 'Could not create event'}</div>}
       <button className="btn primary" disabled={m.isPending}>{m.isPending ? 'Creating...' : 'Create event & notify'}</button>
@@ -117,7 +118,7 @@ const NewsForm: React.FC<{ onDone: () => void; qc: any }> = ({ onDone, qc }) => 
         <Field label="Cover image URL (optional)"><input className="input" value={f.cover_url} onChange={set('cover_url')} placeholder="https://..." /></Field>
       </div>
       <Field label="Excerpt"><textarea className="textarea" style={{ minHeight: 70 }} value={f.excerpt} onChange={set('excerpt')} placeholder="One-line summary shown in the list" /></Field>
-      <Field label="Body"><textarea className="textarea" style={{ minHeight: 220 }} value={f.body} onChange={set('body')} placeholder="Full article. Use blank lines for paragraphs." /></Field>
+      <Field label="Body"><RichEditor value={f.body} onChange={(h) => setF({ ...f, body: h })} minHeight={220} placeholder="Write the article. Paste HTML, insert images or a PDF." /></Field>
       <label style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '6px 0 16px' }}>
         <input type="checkbox" checked={f.published} onChange={set('published')} /> <span className="muted">Publish immediately (notify members)</span>
       </label>

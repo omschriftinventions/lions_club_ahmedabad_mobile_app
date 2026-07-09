@@ -58,7 +58,7 @@ const upsert = z.object({
   starts_at: z.string(),
   ends_at: z.string().optional().nullable(),
   venue: z.string().max(200).optional().nullable(),
-  description: z.string().max(5000).optional().nullable(),
+  description: z.string().max(15 * 1024 * 1024).optional().nullable(),
   cause_id: z.string().max(40).optional().nullable(),
   cover_url: z.string().url().optional().nullable(),
 });
