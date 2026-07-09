@@ -19,7 +19,6 @@ export default function Dashboard() {
 
   const totalUnits = (impact.data?.impact ?? []).reduce((s, r) => s + (r.units || 0), 0);
   const totalProjects = (impact.data?.impact ?? []).reduce((s, r) => s + (r.projects || 0), 0);
-  const totalSpend = (impact.data?.impact ?? []).reduce((s, r) => s + (r.amount_inr || 0), 0);
   const upcomingCount = events.data?.events.length ?? 0;
 
   return (
@@ -33,7 +32,7 @@ export default function Dashboard() {
         <Pill tone="gold">{member?.superAdmin ? 'SUPER ADMIN' : (member?.role ?? 'MEMBER').toUpperCase()}</Pill>
       </div>
 
-      <div className="grid grid-4" style={{ marginBottom: 20 }}>
+      <div className="grid grid-3" style={{ marginBottom: 20 }}>
         <div className="card stat accent">
           <div className="k">People served</div>
           <div className="v">{totalUnits.toLocaleString('en-IN')}</div>
@@ -43,11 +42,6 @@ export default function Dashboard() {
           <div className="k">Service projects</div>
           <div className="v">{totalProjects}</div>
           <div className="d">logged this year</div>
-        </div>
-        <div className="card stat">
-          <div className="k">Amount spent</div>
-          <div className="v">&#8377;{totalSpend.toLocaleString('en-IN')}</div>
-          <div className="d">community impact</div>
         </div>
         <div className="card stat">
           <div className="k">Upcoming events</div>

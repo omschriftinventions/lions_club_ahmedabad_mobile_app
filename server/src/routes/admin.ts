@@ -13,6 +13,8 @@ import { exec } from '../db';
 import { config } from '../config';
 import * as wa from '../providers/whatsapp';
 import * as sms from '../providers/sms';
+import { getAIConfig, saveAIConfig, maskKey, AI_DEFAULTS } from '../services/aiConfig';
+import { getLLMProvider } from '../providers/llm';
 
 const router = Router();
 router.use(requireAuth);
@@ -69,5 +71,53 @@ router.get('/whatsapp/qr', async (_req: AuthedRequest, res) => res.json(wa.getSt
 
 // POST /admin/whatsapp/restart — reconnect / regenerate QR
 router.post('/whatsapp/restart', async (_req: AuthedRequest, res) => { await wa.start(); res.json(wa.getStatus()); });
+
+// ── AI configuration (OpenAI-compatible endpoint, default OpenRouter) ──
+// Used by meeting-recording summaries. Stored in app_settings; resolution
+// order per field: DB > server .env > OpenRouter defaults.
+
+// GET /admin/ai-config — current config (API key masked)
+router.get('/ai-config', async (_req: AuthedRequest, res) => {
+  const cfg = await getAIConfig();
+  res.json({
+    baseUrl: cfg.baseUrl,
+    chatModel: cfg.chatModel,
+    chatModelFallback: cfg.chatModelFallback,
+    apiKeyMasked: maskKey(cfg.apiKey),
+    configured: !!cfg.apiKey,
+    defaults: AI_DEFAULTS,
+  });
+});
+
+// POST /admin/ai-config — save. Empty apiKey keeps the existing key.
+router.post('/ai-config', async (req: AuthedRequest, res) => {
+  const data = z.object({
+    baseUrl: z.string().url().max(300).optional(),
+    apiKey: z.string().max(300).optional(),
+    chatModel: z.string().min(1).max(120).optional(),
+    chatModelFallback: z.string().max(120).optional(),
+  }).parse(req.body);
+  await saveAIConfig(data);
+  const cfg = await getAIConfig();
+  res.json({
+    ok: true,
+    baseUrl: cfg.baseUrl,
+    chatModel: cfg.chatModel,
+    chatModelFallback: cfg.chatModelFallback,
+    apiKeyMasked: maskKey(cfg.apiKey),
+    configured: !!cfg.apiKey,
+  });
+});
+
+// POST /admin/ai-config/test — round-trip a tiny completion to verify the config
+router.post('/ai-config/test', async (_req: AuthedRequest, res) => {
+  const started = Date.now();
+  const result = await getLLMProvider().complete({
+    messages: [{ role: 'user', content: 'Reply with the single word: ok' }],
+    maxTokens: 10,
+    temperature: 0,
+  });
+  res.json({ ok: true, model: result.model, latencyMs: Date.now() - started, reply: result.content.slice(0, 50) });
+});
 
 export default router;

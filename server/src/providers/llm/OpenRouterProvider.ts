@@ -1,31 +1,22 @@
-import { config } from "../../config";
 import { ILLMProvider, LLMCompletionParams, LLMCompletionResult } from "./types";
 import { HttpError } from "../../middleware/error";
+import { getAIConfig } from "../../services/aiConfig";
 
 /**
- * OpenRouter LLM provider.
- * Routes to multiple model families (Anthropic, Google, OpenAI, etc.)
- * with automatic fallback to a secondary model.
+ * OpenAI-compatible chat-completions provider (default: OpenRouter).
+ * Config is admin-editable at runtime (Admin page → AI Configuration) and
+ * resolved per call via getAIConfig(): DB settings > .env > OpenRouter defaults.
+ * Automatic fallback to a secondary model on primary failure.
  */
 export class OpenRouterProvider implements ILLMProvider {
   readonly name = "OpenRouter";
-  private apiKey: string;
-  private baseUrl: string;
-  private primaryModel: string;
-  private fallbackModel: string;
-
-  constructor() {
-    this.apiKey = config.ai.apiKey;
-    this.baseUrl = config.ai.baseUrl;
-    this.primaryModel = config.ai.chatModel;
-    this.fallbackModel = config.ai.chatModelFallback;
-  }
 
   async complete(params: LLMCompletionParams): Promise<LLMCompletionResult> {
-    if (!this.apiKey) throw new HttpError(400, "ai_not_configured", "Set AI_API_KEY in server .env");
+    const cfg = await getAIConfig();
+    if (!cfg.apiKey) throw new HttpError(400, "ai_not_configured", "Set the AI API key from Admin → AI Configuration");
 
     const body: Record<string, any> = {
-      model: this.primaryModel,
+      model: cfg.chatModel,
       messages: params.messages,
       max_tokens: params.maxTokens ?? 4000,
       temperature: params.temperature ?? 0.3,
@@ -35,24 +26,27 @@ export class OpenRouterProvider implements ILLMProvider {
     }
 
     try {
-      return await this.callModel(this.primaryModel, body);
+      return await this.callModel(cfg.baseUrl, cfg.apiKey, cfg.chatModel, body);
     } catch (primaryErr: any) {
       console.warn("[llm] primary model failed, trying fallback:", primaryErr?.message);
+      if (!cfg.chatModelFallback || cfg.chatModelFallback === cfg.chatModel) {
+        throw new HttpError(502, "ai_error", primaryErr?.message || "AI model failed");
+      }
       try {
-        const fallbackBody: Record<string, any> = { ...body, model: this.fallbackModel };
+        const fallbackBody: Record<string, any> = { ...body, model: cfg.chatModelFallback };
         if (params.responseFormat === "json") delete fallbackBody.response_format;
-        return await this.callModel(this.fallbackModel, fallbackBody);
+        return await this.callModel(cfg.baseUrl, cfg.apiKey, cfg.chatModelFallback, fallbackBody);
       } catch (fallbackErr: any) {
         throw new HttpError(502, "ai_error", fallbackErr?.message || "All models failed");
       }
     }
   }
 
-  private async callModel(model: string, body: Record<string, any>): Promise<LLMCompletionResult> {
-    const res = await fetch(this.baseUrl + "/chat/completions", {
+  private async callModel(baseUrl: string, apiKey: string, model: string, body: Record<string, any>): Promise<LLMCompletionResult> {
+    const res = await fetch(baseUrl + "/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: "Bearer " + this.apiKey,
+        Authorization: "Bearer " + apiKey,
         "Content-Type": "application/json",
         "HTTP-Referer": "https://lionsclubofahmedabadhost.com",
         "X-Title": "Lions Club Ahmedabad Meeting Assistant",

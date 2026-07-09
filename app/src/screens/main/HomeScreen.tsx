@@ -211,6 +211,7 @@ export default function HomeScreen() {
                 <View style={{ height: 1, backgroundColor: T.line, marginVertical: 12 }} />
                 <Text style={{ color: T.inkFaint, fontSize: 10, fontWeight: '700', letterSpacing: 1, marginLeft: 4, marginBottom: 6 }}>SYSTEM</Text>
                 <MenuRow icon="shield-checkmark" label="System Admin" onPress={() => go('Admin')} />
+<MenuRow icon="heart-circle" label="Manage causes" onPress={() => go('CauseAdmin')} />
 <MenuRow icon="images" label="Advertisements" onPress={() => go('AdManagement')} />
               </>
             )}

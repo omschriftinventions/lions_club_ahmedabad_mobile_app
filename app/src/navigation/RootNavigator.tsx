@@ -38,6 +38,7 @@ import MeetingDetailScreen from '../screens/main/MeetingDetailScreen';
 import MeetingRecorderLazy from '../screens/main/MeetingRecorderLazy';
 import MeetingUploadLazy from '../screens/main/MeetingUploadLazy';
 import HistoryScreen from '../screens/main/HistoryScreen';
+import CauseAdminScreen from '../screens/main/CauseAdminScreen';
 
 export type RootStackParamList = {
   Main: undefined;
@@ -75,6 +76,7 @@ export type RootStackParamList = {
   MeetingRecorder: undefined;
   MeetingUpload: undefined;
   History: undefined;
+  CauseAdmin: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -119,6 +121,7 @@ export default function RootNavigator() {
       <Stack.Screen name="MeetingRecorder" component={MeetingRecorderLazy} />
       <Stack.Screen name="MeetingUpload" component={MeetingUploadLazy} />
       <Stack.Screen name="History" component={HistoryScreen} />
+      <Stack.Screen name="CauseAdmin" component={CauseAdminScreen} />
     </Stack.Navigator>
   );
 }

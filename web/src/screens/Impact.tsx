@@ -16,7 +16,6 @@ export default function Impact() {
   const causes = useQuery({ queryKey: ['causes'], queryFn: () => api.get<{ causes: Cause[] }>('/causes') });
   const rows = data?.impact ?? [];
   const totalUnits = rows.reduce((s, r) => s + (r.units || 0), 0);
-  const totalSpend = rows.reduce((s, r) => s + (r.amount_inr || 0), 0);
 
   return (
     <>
@@ -25,9 +24,8 @@ export default function Impact() {
         {member?.canEdit && <button className="btn gold" onClick={() => setLogOpen(true)}><Icon name="plus" size={16} /> Log project</button>}
       </div>
 
-      <div className="grid grid-2" style={{ marginBottom: 16 }}>
-        <div className="card stat accent"><div className="k">People served</div><div className="v">{totalUnits.toLocaleString('en-IN')}</div></div>
-        <div className="card stat"><div className="k">Amount spent</div><div className="v">&#8377;{totalSpend.toLocaleString('en-IN')}</div></div>
+      <div style={{ marginBottom: 16 }}>
+        <div className="card stat accent"><div className="k">People served</div><div className="v">{totalUnits.toLocaleString('en-IN')}</div><div className="d">across all causes</div></div>
       </div>
 
       {isLoading ? <Spinner /> :
@@ -36,7 +34,7 @@ export default function Impact() {
           {rows.map((r) => (
             <div key={r.id} className="list-row clickable" onClick={() => nav(`/projects?causeId=${encodeURIComponent(r.id)}`)}>
               <div className="avatar md" style={{ background: `${r.color}22`, color: r.color, fontSize: 22 }}>{r.icon}</div>
-              <div className="meta"><div className="title">{r.name}</div><div className="sub">{r.projects} projects &middot; &#8377;{Number(r.amount_inr).toLocaleString('en-IN')}</div></div>
+              <div className="meta"><div className="title">{r.name}</div><div className="sub">{r.projects} projects</div></div>
               <div style={{ fontWeight: 800, color: r.color, fontSize: 22 }}>{r.units}</div>
               <Icon name="chevron" size={18} />
             </div>

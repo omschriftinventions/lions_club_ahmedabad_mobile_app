@@ -38,7 +38,17 @@ export default function ServiceContentScreen() {
         <Text style={{ color: T.inkMute, marginTop: 4 }}>Lions International Global Causes. Tap a cause to see its projects.</Text>
       </View>
 
-      <View style={{ paddingHorizontal: 16, paddingTop: 16, gap: 12 }}>
+            <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
+        <Card style={{ paddingVertical: 18, paddingHorizontal: 20, alignItems: 'center' }}>
+          <Text style={{ fontSize: 11, fontWeight: '800', color: T.inkMute, letterSpacing: 1 }}>PEOPLE SERVED</Text>
+          <Text style={{ fontSize: 34, fontWeight: '800', color: T.brandBlue, marginTop: 4 }}>
+            {isLoading ? '0' : (data?.impact ?? []).reduce((s, r) => s + (r.units || 0), 0).toLocaleString('en-IN')}
+          </Text>
+          <Text style={{ fontSize: 12, color: T.inkMute, marginTop: 2 }}>across all causes</Text>
+        </Card>
+      </View>
+
+<View style={{ paddingHorizontal: 16, paddingTop: 16, gap: 12 }}>
         {isLoading ? <ActivityIndicator color={T.brandBlue} /> :
           (data?.impact ?? []).map(c => (
             <Pressable key={c.id} onPress={() => nav.navigate('ProjectDetail', { causeId: c.id })}>
@@ -47,7 +57,7 @@ export default function ServiceContentScreen() {
                   <Text style={{ fontSize: 32 }}>{c.icon}</Text>
                   <View style={{ flex: 1 }}>
                     <Text style={{ fontWeight: '700', color: T.ink, fontSize: 16 }}>{c.name}</Text>
-                    <Text style={{ color: T.inkMute, fontSize: 12, marginTop: 2 }}>{c.projects} projects Â· â‚¹{Number(c.amount_inr).toLocaleString('en-IN')}</Text>
+                    <Text style={{ color: T.inkMute, fontSize: 12, marginTop: 2 }}>{c.projects} projects</Text>
                   </View>
                   <Text style={{ fontWeight: '800', color: c.color, fontSize: 22 }}>{c.units}</Text>
                   <Ionicons name="chevron-forward" size={18} color={T.inkFaint} style={{ marginLeft: 4 }} />

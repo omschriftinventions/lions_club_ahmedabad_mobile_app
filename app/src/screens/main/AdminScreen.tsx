@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Pressable, Image, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, Pressable, Image, ScrollView, ActivityIndicator, Alert, TextInput } from 'react-native';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -98,7 +98,104 @@ export default function AdminScreen() {
           )}
           <Text style={{ color: T.inkFaint, fontSize: 11, marginTop: 14 }}>Unofficial WhatsApp Web link (interim). For production, prefer SMS or the official WhatsApp Business API, and run this always-on process on a VPS.</Text>
         </Card>
+
+        <AIConfigCard />
       </ScrollView>
     </Screen>
   );
 }
+
+const AIConfigCard: React.FC = () => {
+  const [cfg, setCfg] = useState<any>(null);
+  const [baseUrl, setBaseUrl] = useState('');
+  const [apiKey, setApiKey] = useState('');
+  const [chatModel, setChatModel] = useState('');
+  const [chatModelFallback, setChatModelFallback] = useState('');
+  const [testResult, setTestResult] = useState<string | null>(null);
+
+  const load = async () => {
+    try {
+      const d = await api.get<any>('/admin/ai-config');
+      setCfg(d);
+      setBaseUrl(d.baseUrl); setChatModel(d.chatModel); setChatModelFallback(d.chatModelFallback);
+    } catch { /* ignore */ }
+  };
+  useEffect(() => { load(); }, []);
+
+  const save = useMutation({
+    mutationFn: () => api.post('/admin/ai-config', {
+      baseUrl, chatModel, chatModelFallback,
+      ...(apiKey.trim() ? { apiKey: apiKey.trim() } : {}),
+    }),
+    onSuccess: () => { setApiKey(''); setTestResult(null); Alert.alert('AI config saved'); load(); },
+    onError: (e: any) => Alert.alert('Save failed', e.message),
+  });
+
+  const test = useMutation({
+    mutationFn: () => api.post<any>('/admin/ai-config/test', {}),
+    onSuccess: (r) => setTestResult(`✓ ${r.model} responded in ${r.latencyMs} ms`),
+    onError: (e: any) => setTestResult(`✗ ${e.message}`),
+  });
+
+  if (!cfg) return <Card style={{ marginTop: 14 }}><ActivityIndicator color={T.brandBlue} /></Card>;
+
+  return (
+    <Card style={{ marginTop: 14 }}>
+      <Text style={{ fontSize: 11, fontWeight: '800', color: T.inkMute, letterSpacing: 1, marginBottom: 8 }}>AI CONFIGURATION</Text>
+      <Text style={{ color: T.inkMute, fontSize: 13, marginBottom: 12 }}>
+        Used to generate meeting-recording summaries. Any OpenAI-compatible endpoint works — OpenRouter is the default.
+      </Text>
+
+      <Field label="API BASE URL" value={baseUrl} onChange={setBaseUrl} placeholder="https://openrouter.ai/api/v1" />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+        {cfg.configured && <Pill label={`Key saved: ${cfg.apiKeyMasked}`} color={T.success} />}
+      </View>
+      <Field
+        label="API KEY"
+        value={apiKey}
+        onChange={setApiKey}
+        placeholder={cfg.configured ? 'Leave blank to keep current key' : 'sk-or-v1-…'}
+        secure
+      />
+      <Field label="MODEL" value={chatModel} onChange={setChatModel} placeholder="anthropic/claude-haiku-4.5" />
+      <Field label="FALLBACK MODEL (optional)" value={chatModelFallback} onChange={setChatModelFallback} placeholder="nvidia/nemotron-3-super-120b-a12b:free" />
+
+      <Button label="Save AI config" onPress={() => save.mutate()} loading={save.isPending} style={{ marginTop: 4 }} />
+      <Button label="Test connection" variant="outline" onPress={() => test.mutate()} loading={test.isPending} disabled={!cfg.configured} style={{ marginTop: 8 }} />
+
+      {testResult && (
+        <Text style={{ marginTop: 10, fontSize: 13, fontWeight: '600', color: testResult.startsWith('✓') ? T.success : T.danger }}>
+          {testResult}
+        </Text>
+      )}
+      {!cfg.configured && (
+        <Text style={{ color: T.danger, fontSize: 12, marginTop: 10 }}>
+          No API key saved — meeting summaries will fail until one is set.
+        </Text>
+      )}
+    </Card>
+  );
+};
+
+// Hoisted so TextInput identity is stable across renders (inline definition
+// would remount the input on every keystroke and drop keyboard focus).
+const Field = ({ label, value, onChange, placeholder, secure }: {
+  label: string; value: string; onChange: (v: string) => void; placeholder?: string; secure?: boolean;
+}) => (
+  <View style={{ marginBottom: 12 }}>
+    <Text style={{ color: T.inkMute, fontSize: 11, letterSpacing: 0.5, marginBottom: 4 }}>{label}</Text>
+    <TextInput
+      value={value}
+      onChangeText={onChange}
+      placeholder={placeholder}
+      placeholderTextColor={T.inkFaint}
+      secureTextEntry={secure}
+      autoCapitalize="none"
+      autoCorrect={false}
+      style={{
+        borderWidth: 1, borderColor: T.line, borderRadius: T.r.sm,
+        paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: T.ink, minHeight: 44,
+      }}
+    />
+  </View>
+);

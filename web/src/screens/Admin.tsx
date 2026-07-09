@@ -81,6 +81,97 @@ export default function Admin() {
         )}
         <div className="hint" style={{ marginTop: 14 }}>Unofficial WhatsApp Web link (interim). For production, prefer SMS or the official WhatsApp Business API, and run this always-on bot on a VPS.</div>
       </div>
+
+      <AIConfigCard />
     </>
+  );
+}
+
+function AIConfigCard() {
+  const [cfg, setCfg] = useState<any>(null);
+  const [baseUrl, setBaseUrl] = useState('');
+  const [apiKey, setApiKey] = useState('');
+  const [chatModel, setChatModel] = useState('');
+  const [chatModelFallback, setChatModelFallback] = useState('');
+  const [testResult, setTestResult] = useState<string | null>(null);
+
+  const load = async () => {
+    try {
+      const d = await api.get<any>('/admin/ai-config');
+      setCfg(d);
+      setBaseUrl(d.baseUrl); setChatModel(d.chatModel); setChatModelFallback(d.chatModelFallback);
+    } catch { /* ignore */ }
+  };
+  useEffect(() => { load(); }, []);
+
+  const save = useMutation({
+    mutationFn: () => api.post('/admin/ai-config', {
+      baseUrl, chatModel, chatModelFallback,
+      ...(apiKey.trim() ? { apiKey: apiKey.trim() } : {}),
+    }),
+    onSuccess: () => { setApiKey(''); setTestResult(null); load(); },
+  });
+
+  const test = useMutation({
+    mutationFn: () => api.post<any>('/admin/ai-config/test', {}),
+    onSuccess: (r) => setTestResult(`✓ ${r.model} responded in ${r.latencyMs} ms`),
+    onError: (e: any) => setTestResult(`✗ ${e.message}`),
+  });
+
+  const resetDefaults = () => {
+    if (!cfg?.defaults) return;
+    setBaseUrl(cfg.defaults.baseUrl);
+    setChatModel(cfg.defaults.chatModel);
+    setChatModelFallback(cfg.defaults.chatModelFallback);
+  };
+
+  if (!cfg) return <div className="card pad" style={{ marginTop: 16 }}><Spinner /></div>;
+
+  return (
+    <div className="card pad" style={{ marginTop: 16 }}>
+      <div className="card-title">AI Configuration</div>
+      <p className="muted" style={{ fontSize: 14 }}>
+        Used to generate meeting-recording summaries. Any OpenAI-compatible endpoint works —
+        <b> OpenRouter</b> is the default. Get a key at <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer">openrouter.ai/keys</a>.
+      </p>
+
+      <div style={{ display: 'grid', gap: 12, marginTop: 12, maxWidth: 620 }}>
+        <div>
+          <div className="hint" style={{ marginBottom: 4 }}>API BASE URL</div>
+          <input className="input" value={baseUrl} onChange={e => setBaseUrl(e.target.value)} placeholder="https://openrouter.ai/api/v1" />
+        </div>
+        <div>
+          <div className="hint" style={{ marginBottom: 4 }}>
+            API KEY {cfg.configured && <Pill tone="green">saved: {cfg.apiKeyMasked}</Pill>}
+          </div>
+          <input className="input" type="password" value={apiKey} onChange={e => setApiKey(e.target.value)}
+            placeholder={cfg.configured ? 'Leave blank to keep the current key' : 'sk-or-v1-…'} autoComplete="new-password" />
+        </div>
+        <div>
+          <div className="hint" style={{ marginBottom: 4 }}>MODEL</div>
+          <input className="input" value={chatModel} onChange={e => setChatModel(e.target.value)} placeholder="anthropic/claude-haiku-4.5" />
+        </div>
+        <div>
+          <div className="hint" style={{ marginBottom: 4 }}>FALLBACK MODEL (optional — used when the primary fails)</div>
+          <input className="input" value={chatModelFallback} onChange={e => setChatModelFallback(e.target.value)} placeholder="nvidia/nemotron-3-super-120b-a12b:free" />
+        </div>
+      </div>
+
+      <div className="btn-row" style={{ marginTop: 14 }}>
+        <button className="btn primary" onClick={() => save.mutate()} disabled={save.isPending}>
+          <Icon name="settings" size={16} /> {save.isPending ? 'Saving…' : 'Save AI config'}
+        </button>
+        <button className="btn outline" onClick={() => test.mutate()} disabled={test.isPending || !cfg.configured}>
+          {test.isPending ? 'Testing…' : 'Test connection'}
+        </button>
+        <button className="btn outline" onClick={resetDefaults}>Reset to OpenRouter defaults</button>
+      </div>
+
+      {save.isSuccess && !save.isPending && <div style={{ marginTop: 10 }}><Pill tone="green">Saved</Pill></div>}
+      {testResult && (
+        <div className="hint" style={{ marginTop: 10, color: testResult.startsWith('✓') ? 'var(--green, #1F8A5B)' : 'var(--red)' }}>{testResult}</div>
+      )}
+      {!cfg.configured && <div className="hint" style={{ marginTop: 10, color: 'var(--red)' }}>No API key saved — meeting summaries will fail until one is set.</div>}
+    </div>
   );
 }

@@ -46,6 +46,7 @@ const OFFICER_NAV = [
 
 const SUPER_NAV = [
   { to: '/admin', label: 'System Admin', icon: 'settings' },
+  { to: '/causes-admin', label: 'Causes', icon: 'heart' },
   { to: '/ads', label: 'Advertisements', icon: 'image' },
   { to: '/history-admin', label: 'Manage History', icon: 'history' },
 ];
