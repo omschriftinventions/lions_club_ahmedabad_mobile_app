@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './lib/auth';
 import { Shell } from './components/Shell';
 import Login from './screens/Login';
@@ -39,10 +39,15 @@ import Meetings from './screens/Meetings';
 import MeetingDetail from './screens/MeetingDetail';
 import AdManagement from './screens/AdManagement';
 import CauseAdmin from './screens/CauseAdmin';
+import Privacy from './screens/Privacy';
 
 export default function App() {
   const { access, hydrate, ready } = useAuth();
+  const location = useLocation();
   useEffect(() => { hydrate(); }, []);
+
+  // Public pages — must be reachable WITHOUT login (App Store / Play Store review requirement)
+  if (location.pathname === '/privacy') return <Privacy />;
 
   if (!ready) return <div className="center" style={{ minHeight: '100vh', background: 'var(--navy)' }}><div className="spinner" style={{ borderTopColor: 'var(--gold)' }} /></div>;
   if (!access) return <Login />;
