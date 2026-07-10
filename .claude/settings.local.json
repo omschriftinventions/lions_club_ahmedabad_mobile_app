@@ -67,7 +67,26 @@
       "Bash(plink -batch -ssh root@5.189.172.74 -pw \"Ahmedabad0134\" \"mysql -N -e \\\\\"SELECT user, host FROM mysql.user WHERE user IN \\('lions','root'\\);\\\\\" 2>/dev/null || mysql -u root -e \\\\\"SELECT user, host FROM mysql.user WHERE user IN \\('lions','root'\\);\\\\\"\")",
       "Bash(plink -batch -ssh root@5.189.172.74 -pw \"Ahmedabad0134\" \"find / -maxdepth 4 -name '.env' -path '*server*' 2>/dev/null; find /root /home /var/www /opt -maxdepth 3 -name '.env' 2>/dev/null | head -10\")",
       "Bash(plink -batch -ssh root@5.189.172.74 -pw \"Ahmedabad0134\" \"find / -name '.env' -not -path '*/node_modules/*' -not -path '/proc/*' -not -path '/sys/*' 2>/dev/null | head -20\")",
-      "Bash(plink -batch -ssh root@5.189.172.74 -pw \"Ahmedabad0134\" \"grep -E '^DB_' /var/www/lionsclub/lions_club_ahmedabad_mobile_app/server/.env\")"
+      "Bash(plink -batch -ssh root@5.189.172.74 -pw \"Ahmedabad0134\" \"grep -E '^DB_' /var/www/lionsclub/lions_club_ahmedabad_mobile_app/server/.env\")",
+      "Bash(npx eas-cli@latest build --platform ios --profile preview --non-interactive --no-wait)",
+      "Bash(plink -batch -ssh root@5.189.172.74 -pw \"Ahmedabad0134\" \"grep -E 'DEV_BYPASS_OTP|OTP_DEV_LOG|NODE_ENV' /var/www/lionsclub/lions_club_ahmedabad_mobile_app/server/.env; echo ---; curl -s http://localhost:4000/health 2>/dev/null || curl -s https://api.lionsclubofahmedabadhost.com/health\")",
+      "Bash(plink -batch -ssh root@5.189.172.74 -pw \"Ahmedabad0134\" \"mysql -u lions -p'Ahmedabad@0134' lionsclub -N -e \\\\\"SELECT k, value FROM app_settings WHERE k IN \\('auth_method','otp_provider'\\);\\\\\" 2>/dev/null\")",
+      "Bash(plink -batch -ssh root@5.189.172.74 -pw \"Ahmedabad0134\" \"pm2 restart lions-api --update-env && sleep 3 && curl -s http://localhost:4000/health\")",
+      "Bash(npx eas-cli@latest build --platform android --profile production --non-interactive --no-wait)",
+      "Bash(npx eas-cli@latest build:view bf884bd0-9113-4b6d-8e4e-5b5bfd12655f)",
+      "Bash(npx eas-cli@latest build:view 5747c96a-203b-426c-b418-c188bcf40ac8)",
+      "Bash(ls public/)",
+      "Bash(grep -n \"try_files\" /dev/null)",
+      "Bash(plink -batch -ssh root@5.189.172.74 -pw \"Ahmedabad0134\" \"grep -rn 'try_files\\\\|root' /etc/nginx/sites-enabled/ 2>/dev/null | grep -v '#' | head -8\")",
+      "Bash(plink -batch -ssh root@5.189.172.74 -pw \"Ahmedabad0134\" \"cat /etc/nginx/sites-enabled/* 2>/dev/null | grep -E 'server_name|root|try_files' | head -10\")",
+      "Bash(git push *)",
+      "Bash(plink -batch -ssh root@5.189.172.74 -pw \"Ahmedabad0134\" \"cd /var/www/lionsclub/lions_club_ahmedabad_mobile_app && git pull 2>&1 | tail -3 && cd web && npm run build 2>&1 | tail -3\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://lionsclubofahmedabadhost.com/privacy)",
+      "Bash(curl -s https://lionsclubofahmedabadhost.com/privacy)",
+      "Bash(curl -sL https://lionsclubofahmedabadhost.com/privacy -o /dev/null -w \"final: %{url_effective} → %{http_code}\\\\n\")",
+      "Bash(curl -sL https://lionsclubofahmedabadhost.com/privacy)",
+      "Bash(where adb *)",
+      "Bash(adb devices *)"
     ]
   }
 }
