@@ -9,13 +9,14 @@ import { useAuth } from './src/lib/auth';
 import { queryClient } from './src/lib/queryClient';
 import { registerForPush } from './src/lib/push';
 import RootNavigator from './src/navigation/RootNavigator';
+import { RootErrorBoundary } from './src/components/RootErrorBoundary';
 import { T } from './src/theme/tokens';
 
 export default function App() {
   const { ready, hydrate, access } = useAuth();
 
   useEffect(() => {
-    hydrate();
+    hydrate().catch((e) => { console.error('[hydrate]', e); });
   }, []);
 
   useEffect(() => {
@@ -31,15 +32,17 @@ export default function App() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <QueryClientProvider client={queryClient}>
-          <NavigationContainer>
-            <StatusBar style="auto" />
-            <RootNavigator />
-          </NavigationContainer>
-        </QueryClientProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <RootErrorBoundary>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <QueryClientProvider client={queryClient}>
+            <NavigationContainer>
+              <StatusBar style="auto" />
+              <RootNavigator />
+            </NavigationContainer>
+          </QueryClientProvider>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </RootErrorBoundary>
   );
 }
