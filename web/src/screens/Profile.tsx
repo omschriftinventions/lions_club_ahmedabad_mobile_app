@@ -5,7 +5,31 @@ import { useAuth } from '../lib/auth';
 import { Avatar } from '../components/Avatar';
 import { Icon } from '../components/Icon';
 import { Spinner, Modal, Field, Pill, EmptyState } from '../components/ui';
+import { RichEditor } from '../components/RichEditor';
 import type { Member } from '../types';
+
+// Render E-GAINS values (stored as HTML) on the profile page.
+const EGAINS_FIELDS: [string, string][] = [
+  ['expertise', 'Expertise'], ['goals', 'Goals'], ['accomplishments', 'Accomplishments'],
+  ['interests', 'Interests'], ['network', 'Network'], ['social', 'Social connections'],
+];
+const hasHtml = (v?: string | null) => !!v && v.replace(/<[^>]*>/g, '').trim().length > 0;
+
+const EgainsView: React.FC<{ m: any }> = ({ m }) => {
+  const rows = EGAINS_FIELDS.filter(([k]) => hasHtml(m[k]));
+  if (!rows.length) return null;
+  return (
+    <div className="card pad" style={{ marginTop: 16 }}>
+      <div className="card-title">Networking (E-GAINS)</div>
+      {rows.map(([k, label]) => (
+        <div key={k} style={{ marginBottom: 14 }}>
+          <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 700, marginBottom: 4 }}>{label}</div>
+          <div className="prose" dangerouslySetInnerHTML={{ __html: m[k] }} />
+        </div>
+      ))}
+    </div>
+  );
+};
 
 export default function Profile() {
   const qc = useQueryClient();
@@ -72,6 +96,8 @@ export default function Profile() {
         </div>
       </div>
 
+      <EgainsView m={m} />
+
       {editing && (
         <EditModal member={m} onClose={() => setEditing(false)}
           onSave={(body) => save.mutate(body)} saving={save.isPending} error={save.error as any} />
@@ -115,6 +141,13 @@ const EditModal: React.FC<{ member: Member; onClose: () => void; onSave: (b: any
     </Field>
   );
 
+  // Rich-text field (E-GAINS) — stores HTML.
+  const R = (k: string, label: string) => (
+    <Field label={label}>
+      <RichEditor value={(f as any)[k]} onChange={(html) => setF((s) => ({ ...s, [k]: html }))} minHeight={110} placeholder={`Add ${label.toLowerCase()}…`} />
+    </Field>
+  );
+
   return (
     <Modal title="Edit profile" onClose={onClose}
       footer={<><button className="btn ghost" onClick={onClose}>Cancel</button><button className="btn primary" disabled={saving} onClick={submit}>{saving ? 'Saving...' : 'Save changes'}</button></>}>
@@ -138,12 +171,13 @@ const EditModal: React.FC<{ member: Member; onClose: () => void; onSave: (b: any
         {I('spouse', 'Spouse')}
       <hr className="divider" />
       <div className="card-title">Networking (E-GAINS)</div>
-      {I('expertise', 'Expertise', { area: true })}
-      {I('goals', 'Goals', { area: true })}
-      {I('accomplishments', 'Accomplishments', { area: true })}
-      {I('interests', 'Interests', { area: true })}
-      {I('network', 'Network', { area: true })}
-      {I('social', 'Social connections', { area: true })}
+      <div className="hint" style={{ marginBottom: 8 }}>Formatting, lists, links and images supported.</div>
+      {R('expertise', 'Expertise')}
+      {R('goals', 'Goals')}
+      {R('accomplishments', 'Accomplishments')}
+      {R('interests', 'Interests')}
+      {R('network', 'Network')}
+      {R('social', 'Social connections')}
         {error && <div className="pill red" style={{ marginTop: 8 }}>{(error as any).message || 'Save failed'}</div>}
       </form>
     </Modal>

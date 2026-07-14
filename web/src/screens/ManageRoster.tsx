@@ -6,6 +6,7 @@ import { useAuth } from '../lib/auth';
 import { Icon } from '../components/Icon';
 import { Avatar } from '../components/Avatar';
 import { Spinner, EmptyState, Pill, Modal, Field } from '../components/ui';
+import { RichEditor } from '../components/RichEditor';
 
 export default function ManageRoster() {
   const nav = useNavigate();
@@ -156,12 +157,12 @@ const ManageMemberModal: React.FC<{ member: any; onClose: () => void }> = ({ mem
       <Field label="Bio"><textarea className="textarea" value={f.bio} onChange={set('bio')} rows={2} /></Field>
 
       <div className="card-title" style={{ marginTop: 12 }}>Networking (E-GAINS)</div>
-      <Field label="Expertise"><textarea className="textarea" value={f.expertise} onChange={set('expertise')} rows={2} /></Field>
-      <Field label="Goals"><textarea className="textarea" value={f.goals} onChange={set('goals')} rows={2} /></Field>
-      <Field label="Accomplishments"><textarea className="textarea" value={f.accomplishments} onChange={set('accomplishments')} rows={2} /></Field>
-      <Field label="Interests"><textarea className="textarea" value={f.interests} onChange={set('interests')} rows={2} /></Field>
-      <Field label="Network"><textarea className="textarea" value={f.network} onChange={set('network')} rows={2} /></Field>
-      <Field label="Social connections"><textarea className="textarea" value={f.social} onChange={set('social')} rows={2} /></Field>
+      <div className="hint" style={{ marginBottom: 8 }}>Rich text — formatting, lists, links, images supported.</div>
+      {(['expertise','goals','accomplishments','interests','network','social'] as const).map((k) => (
+        <Field key={k} label={k === 'social' ? 'Social connections' : k.charAt(0).toUpperCase() + k.slice(1)}>
+          <RichEditor value={(f as any)[k]} onChange={(html) => setF((s) => ({ ...s, [k]: html }))} minHeight={100} placeholder={`Add ${k}…`} />
+        </Field>
+      ))}
       <button className="btn primary sm" style={{ marginTop: 10 }} disabled={saveDetails.isPending || f.name.trim().length < 2} onClick={() => saveDetails.mutate()}>
         {saveDetails.isPending ? 'Saving...' : 'Save member details'}
       </button>

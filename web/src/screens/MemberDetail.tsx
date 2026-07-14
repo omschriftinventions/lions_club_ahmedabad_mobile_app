@@ -73,14 +73,15 @@ const Egains: React.FC<{ m: any }> = ({ m }) => {
     ['Expertise', m.expertise], ['Goals', m.goals], ['Accomplishments', m.accomplishments],
     ['Interests', m.interests], ['Network', m.network], ['Social connections', m.social],
   ];
-  if (!rows.some(([, v]) => v && v.trim())) return null;
+  const has = (v?: string | null) => !!v && v.replace(/<[^>]*>/g, '').trim().length > 0;
+  if (!rows.some(([, v]) => has(v))) return null;
   return (
     <div className="card pad" style={{ marginTop: 16 }}>
       <div className="card-title">Networking (E-GAINS)</div>
-      {rows.map(([label, v]) => v && v.trim() ? (
+      {rows.map(([label, v]) => has(v) ? (
         <div key={label} style={{ marginBottom: 12 }}>
-          <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 700 }}>{label}</div>
-          <div style={{ marginTop: 4, color: 'var(--ink-2)', whiteSpace: 'pre-wrap' }}>{v}</div>
+          <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 700, marginBottom: 4 }}>{label}</div>
+          <div className="prose" dangerouslySetInnerHTML={{ __html: v as string }} />
         </div>
       ) : null)}
     </div>
