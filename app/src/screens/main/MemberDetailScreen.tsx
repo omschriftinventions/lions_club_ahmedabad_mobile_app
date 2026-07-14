@@ -7,6 +7,7 @@ import { Screen } from '../../components/Screen';
 import { Card } from '../../components/Card';
 import { Avatar } from '../../components/Avatar';
 import { Pill } from '../../components/Pill';
+import { HtmlView } from '../../components/HtmlView';
 import { api } from '../../lib/api';
 import { T } from '../../theme/tokens';
 
@@ -63,7 +64,7 @@ export default function MemberDetailScreen() {
           <Row icon="people" label="Spouse" value={m.spouse} />
         </Card>
         {m.bio && <Card><Text style={{ color: T.inkSoft, lineHeight: 20 }}>{m.bio}</Text></Card>}
-        {(m.expertise || m.goals || m.accomplishments || m.interests || m.network || m.social) ? (
+        {[m.expertise, m.goals, m.accomplishments, m.interests, m.network, m.social].some(egHas) ? (
           <Card>
             <Text style={{ color: T.inkMute, fontSize: 11, fontWeight: '800', letterSpacing: 1, marginBottom: 8 }}>NETWORKING (E-GAINS)</Text>
             <Eg label="Expertise" v={m.expertise} />
@@ -98,9 +99,11 @@ const Row = ({ icon, label, value }: any) =>
       </View>
     </View>
   ) : null;
-const Eg = ({ label, v }: any) => v && v.trim() ? (
-  <View style={{ marginBottom: 10 }}>
-    <Text style={{ color: T.inkMute, fontSize: 11, letterSpacing: 0.5 }}>{label.toUpperCase()}</Text>
-    <Text style={{ color: T.ink, fontSize: 14, marginTop: 2, lineHeight: 19 }}>{v}</Text>
+// True when the (possibly HTML) value has visible content.
+const egHas = (v?: string | null) => !!v && v.replace(/<[^>]*>/g, '').trim().length > 0;
+const Eg = ({ label, v }: any) => egHas(v) ? (
+  <View style={{ marginBottom: 12 }}>
+    <Text style={{ color: T.inkMute, fontSize: 11, letterSpacing: 0.5, marginBottom: 2 }}>{label.toUpperCase()}</Text>
+    <HtmlView html={v} />
   </View>
 ) : null;

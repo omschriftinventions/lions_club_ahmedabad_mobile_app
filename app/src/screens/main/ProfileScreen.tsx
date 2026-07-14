@@ -8,9 +8,18 @@ import { Card } from '../../components/Card';
 import { Avatar } from '../../components/Avatar';
 import { Pill } from '../../components/Pill';
 import { Button } from '../../components/Button';
+import { HtmlView } from '../../components/HtmlView';
 import { api } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 import { T } from '../../theme/tokens';
+
+const egHas = (v?: string | null) => !!v && v.replace(/<[^>]*>/g, '').trim().length > 0;
+const Eg = ({ label, v }: { label: string; v?: string | null }) => egHas(v) ? (
+  <View style={{ marginBottom: 12 }}>
+    <Text style={{ color: T.inkMute, fontSize: 11, letterSpacing: 0.5, marginBottom: 2 }}>{label.toUpperCase()}</Text>
+    <HtmlView html={v as string} />
+  </View>
+) : null;
 
 export default function ProfileScreen() {
   const nav = useNavigation<any>();
@@ -65,6 +74,18 @@ export default function ProfileScreen() {
           <Row icon="heart" label="Anniversary" value={me.anniv} />
           <Row icon="people" label="Spouse" value={me.spouse} />
         </Card>
+
+        {[me.expertise, me.goals, me.accomplishments, me.interests, me.network, me.social].some(egHas) ? (
+          <Card>
+            <Text style={{ color: T.inkMute, fontSize: 11, fontWeight: '800', letterSpacing: 1, marginBottom: 8 }}>NETWORKING (E-GAINS)</Text>
+            <Eg label="Expertise" v={me.expertise} />
+            <Eg label="Goals" v={me.goals} />
+            <Eg label="Accomplishments" v={me.accomplishments} />
+            <Eg label="Interests" v={me.interests} />
+            <Eg label="Network" v={me.network} />
+            <Eg label="Social connections" v={me.social} />
+          </Card>
+        ) : null}
 
         <Card>
           <Pressable onPress={() => setPwOpen(true)} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
