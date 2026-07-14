@@ -52,6 +52,32 @@ router.put("/:slug", requireAuth, requireSuperAdmin, async (req: AuthedRequest, 
   res.json({ ok: true });
 });
 
+// ── POST /content/upload-image — upload an image (e.g. pasted from Word),
+// store it, return a public URL. Keeps the stored HTML small vs inline base64.
+// Body: { file: "data:image/png;base64,..." }
+const IMG_MIME_EXT: Record<string, string> = {
+  'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp',
+  'image/gif': 'gif', 'image/bmp': 'bmp',
+};
+const MAX_IMG_BYTES = 12 * 1024 * 1024;
+
+router.post("/upload-image", requireAuth, requireSuperAdmin, async (req: AuthedRequest, res) => {
+  const { file } = z.object({ file: z.string().min(1).max(MAX_IMG_BYTES * 2) }).parse(req.body);
+  const match = file.match(/^data:(image\/[a-z+]+);base64,([A-Za-z0-9+/=]+)$/i);
+  if (!match) throw new HttpError(400, "invalid_image", "expected data:image/...;base64,...");
+  const mime = match[1].toLowerCase();
+  const ext = IMG_MIME_EXT[mime];
+  if (!ext) throw new HttpError(400, "unsupported_image_type", "jpg/png/webp/gif/bmp only");
+  const buf = Buffer.from(match[2], "base64");
+  if (buf.length > MAX_IMG_BYTES) throw new HttpError(413, "image_too_large", "max " + MAX_IMG_BYTES + " bytes");
+  const filename = crypto.randomUUID() + "." + ext;
+  const dir = path.resolve(config.uploads.dir, "..", "cms");
+  await fs.promises.mkdir(dir, { recursive: true });
+  await fs.promises.writeFile(path.join(dir, filename), buf);
+  const base = config.uploads.publicBaseUrl || (req.protocol + "://" + req.get("host"));
+  res.status(201).json({ url: base + "/uploads/cms/" + filename });
+});
+
 // ── POST /content/upload-pdf — upload a PDF, store it, return a public URL ──
 // The admin embeds the returned URL in the History page so members view the
 // full PDF inline (rendered by the browser on web, by the WebView on mobile).
