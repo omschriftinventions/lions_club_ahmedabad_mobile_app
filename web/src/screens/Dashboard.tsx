@@ -16,6 +16,7 @@ export default function Dashboard() {
   const impact = useQuery({ queryKey: ['impact'], queryFn: () => api.get<{ impact: ImpactRow[] }>('/causes/impact') });
   const events = useQuery({ queryKey: ['events', 'up'], queryFn: () => api.get<{ events: ClubEvent[] }>('/events?upcoming=true&limit=5') });
   const news = useQuery({ queryKey: ['news', 'recent'], queryFn: () => api.get<{ news: NewsItem[] }>('/news?limit=4') });
+  const history = useQuery({ queryKey: ['content', 'history'], queryFn: () => api.get<{ html: string }>('/content/history') });
 
   const totalUnits = (impact.data?.impact ?? []).reduce((s, r) => s + (r.units || 0), 0);
   const totalProjects = (impact.data?.impact ?? []).reduce((s, r) => s + (r.projects || 0), 0);
@@ -103,6 +104,16 @@ export default function Dashboard() {
             ))}
         </div>
       </div>
+
+      {history.data?.html?.trim() && (
+        <div className="card pad" style={{ marginTop: 16 }}>
+          <div className="card-head" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div className="card-title">Our History</div>
+            <span className="link clickable" onClick={() => nav('/history')} style={{ fontSize: 13 }}>Open full page &rarr;</span>
+          </div>
+          <div className="prose" dangerouslySetInnerHTML={{ __html: history.data.html }} />
+        </div>
+      )}
     </>
   );
 }
