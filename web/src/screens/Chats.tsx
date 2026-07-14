@@ -14,7 +14,7 @@ export default function Chats() {
   const [add, setAdd] = useState(false);
   const { data, isLoading } = useQuery({ queryKey: ['chats'], queryFn: () => api.get<{ threads: any[] }>('/chats'), refetchInterval: 15000 });
   const threads = data?.threads ?? [];
-  const members = useQuery({ queryKey: ['roster', 'all'], queryFn: () => api.get<{ members: Member[] }>('/members?limit=500') });
+  const members = useQuery({ queryKey: ['roster', 'chat'], queryFn: () => api.get<{ members: Member[] }>('/members?limit=500&include_admins=1') });
 
   return (
     <>
@@ -28,10 +28,17 @@ export default function Chats() {
             <div key={t.id} className="list-row clickable" onClick={() => nav(`/chats/${t.id}`)}>
               <div className="avatar md" style={{ background: t.is_group ? 'var(--blue)' : 'var(--navy)' }}><Icon name={t.is_group ? 'users' : 'chat'} size={18} /></div>
               <div className="meta">
-                <div className="title">{t.title || t.others || 'Direct chat'}</div>
+                <div className="title" style={{ fontWeight: t.unread > 0 ? 800 : 600 }}>{t.title || t.others || 'Direct chat'}</div>
                 <div className="sub">{t.last_body ? t.last_body.slice(0, 60) : 'No messages yet'}</div>
               </div>
-              {t.last_at && <div className="faint" style={{ fontSize: 12 }}>{fmtDateTime(t.last_at)}</div>}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                {t.last_at && <div className="faint" style={{ fontSize: 12 }}>{fmtDateTime(t.last_at)}</div>}
+                {t.unread > 0 && (
+                  <span style={{ background: 'var(--blue)', color: '#fff', borderRadius: 999, minWidth: 20, height: 20, padding: '0 6px', fontSize: 12, fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {t.unread > 99 ? '99+' : t.unread}
+                  </span>
+                )}
+              </div>
             </div>
           ))}
         </div>

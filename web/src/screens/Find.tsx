@@ -19,9 +19,11 @@ export default function Find() {
   return (
     <>
       <div className="page-head"><div><h1>Find a Lion</h1><div className="sub">Search the roster by name, profession or business</div></div></div>
-      <div className="card pad" style={{ marginBottom: 16, position: 'relative' }}>
-        <span style={{ position: 'absolute', left: 12, top: 11, color: 'var(--faint)' }}><Icon name="search" size={18} /></span>
-        <input className="input" style={{ paddingLeft: 38 }} autoFocus placeholder="Search name, profession, business, area, role..." value={q} onChange={(e) => setQ(e.target.value)} />
+      <div className="card pad" style={{ marginBottom: 16 }}>
+        <div className="search-box">
+          <span className="ico"><Icon name="search" size={18} /></span>
+          <input className="input" autoFocus placeholder="Search name, profession, business, area, role..." value={q} onChange={(e) => setQ(e.target.value)} />
+        </div>
       </div>
       {q.length < 2 ? <EmptyState icon="search" title="Start typing" body="Enter a name, profession or business to search." /> :
         isFetching ? <Spinner /> : list.length === 0 ? <EmptyState icon="users" title="No matches" /> : (

@@ -32,8 +32,8 @@ export default function ChatListScreen() {
     refetchInterval: 10_000,
   });
   const roster = useQuery({
-    queryKey: ['members', ''],
-    queryFn: () => api.get<{ members: Member[] }>('/members?limit=500'),
+    queryKey: ['members', 'chat-contacts'],
+    queryFn: () => api.get<{ members: Member[] }>('/members?limit=500&include_admins=1'),
     enabled: picker,
   });
   const create = useMutation({

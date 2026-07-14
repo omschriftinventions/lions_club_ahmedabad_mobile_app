@@ -32,10 +32,12 @@ export default function Help() {
         <div><h1>Help &amp; User Guide</h1><div className="sub">How to use the portal &mdash; search pages or questions</div></div>
       </div>
 
-      <div className="card pad" style={{ marginBottom: 16, position: 'relative' }}>
-        <span style={{ position: 'absolute', left: 12, top: 11, color: 'var(--faint)' }}><Icon name="search" size={18} /></span>
-        <input className="input" style={{ paddingLeft: 38 }} placeholder="Search the guide or FAQs (e.g. RSVP, upload, officer)..."
-          value={q} onChange={(e) => setQ(e.target.value)} autoFocus />
+      <div className="card pad" style={{ marginBottom: 16 }}>
+        <div className="search-box">
+          <span className="ico"><Icon name="search" size={18} /></span>
+          <input className="input" placeholder="Search the guide or FAQs (e.g. RSVP, upload, officer)..."
+            value={q} onChange={(e) => setQ(e.target.value)} autoFocus />
+        </div>
       </div>
 
       {q && (sections.length === 0 && faqs.length === 0) ? <EmptyState icon="search" title={`No matches for "${q}"`} body="Try a different keyword." /> : (

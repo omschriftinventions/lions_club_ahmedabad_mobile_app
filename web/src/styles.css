@@ -87,6 +87,12 @@ h1, h2, h3, h4 { margin: 0; font-weight: 700; color: var(--ink); letter-spacing:
 /* ---------- Cards ---------- */
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); box-shadow: var(--shadow-sm); }
 .card.pad { padding: 18px; }
+/* Inner content padding for cards that place a .pad wrapper inside (news/events/district tiles) */
+.card > .pad, .card > .body { padding: 16px 18px; }
+/* Search input with a leading icon — icon positioned relative to the input, not the card */
+.search-box { position: relative; }
+.search-box .ico { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--faint); pointer-events: none; display: inline-flex; }
+.search-box .input { padding-left: 38px; }
 .card-title { font-size: 13px; font-weight: 700; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; margin-bottom: 14px; }
 .grid { display: grid; gap: 16px; }
 .grid-2 { grid-template-columns: repeat(2, 1fr); }

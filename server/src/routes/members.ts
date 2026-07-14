@@ -18,9 +18,13 @@ router.get('/', async (req: AuthedRequest, res) => {
     search: z.string().optional(),
     role: z.string().optional(),
     limit: z.coerce.number().int().min(1).max(500).default(200),
+    // include_admins=1 → also return the super admin (used by the chat contact
+    // picker so members can start a conversation with the admin).
+    include_admins: z.coerce.boolean().optional(),
   }).parse(req.query);
 
-  const where: string[] = ['m.club_id = :clubId', 'm.active = 1', 'm.is_super_admin = 0'];
+  const where: string[] = ['m.club_id = :clubId', 'm.active = 1'];
+  if (!q.include_admins) where.push('m.is_super_admin = 0');
   const params: any = { clubId: req.user!.clubId, limit: q.limit };
   if (q.search) { where.push('(m.name LIKE :s OR m.profession LIKE :s OR m.business LIKE :s OR m.area LIKE :s OR m.designation LIKE :s OR m.email LIKE :s OR m.phone LIKE :s OR r.label LIKE :s OR r.code LIKE :s)'); params.s = `%${q.search}%`; }
   if (q.role)   { where.push('r.code = :role'); params.role = q.role; }
