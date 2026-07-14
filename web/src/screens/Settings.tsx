@@ -17,7 +17,10 @@ export default function Settings() {
   );
   return (
     <>
-      <div className="page-head"><div><h1>Settings</h1></div></div>
+      <div className="page-head with-back">
+        <button className="back-btn" onClick={() => nav(-1)} title="Back"><Icon name="back" size={20} /></button>
+        <div><h1>Settings</h1></div>
+      </div>
       <div className="card pad" style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 14 }}>
         <Avatar name={member?.name} size="lg" />
         <div style={{ flex: 1 }}><div style={{ fontWeight: 800, fontSize: 16 }}>{member?.name}</div><div style={{ marginTop: 6 }}>{member?.role && <Pill tone="blue">{member.role.toUpperCase()}</Pill>}</div></div>

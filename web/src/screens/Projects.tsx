@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
@@ -8,6 +8,7 @@ import { Spinner, EmptyState, Pill, fmtDate } from '../components/ui';
 
 export default function Projects() {
   const [params] = useSearchParams();
+  const nav = useNavigate();
   const causeId = params.get('causeId') ?? undefined;
   const qc = useQueryClient();
   const { member } = useAuth();
@@ -32,7 +33,10 @@ export default function Projects() {
 
   return (
     <>
-      <div className="page-head"><div><h1>Service Projects</h1><div className="sub">{causeId ? `Cause: ${causeId}` : 'All projects'}</div></div></div>
+      <div className="page-head with-back">
+        <button className="back-btn" onClick={() => nav(-1)} title="Back"><Icon name="back" size={20} /></button>
+        <div><h1>Service Projects</h1><div className="sub">{causeId ? `Cause: ${causeId}` : 'All projects'}</div></div>
+      </div>
       {isLoading ? <Spinner /> : projects.length === 0 ? <EmptyState icon="heart" title="No projects logged" /> : (
         <div className="grid grid-2">
           <div className="card">

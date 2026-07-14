@@ -16,9 +16,11 @@ export default function Directory() {
   return (
     <>
       <div className="page-head"><div><h1>Business Directory</h1><div className="sub">Member businesses &amp; professions</div></div></div>
-      <div className="card pad" style={{ marginBottom: 16, position: 'relative' }}>
-        <span style={{ position: 'absolute', left: 12, top: 11, color: 'var(--faint)' }}><Icon name="search" size={18} /></span>
-        <input className="input" style={{ paddingLeft: 38 }} placeholder="Search business, profession, area, role..." value={q} onChange={(e) => setQ(e.target.value)} />
+      <div className="card pad" style={{ marginBottom: 16 }}>
+        <div className="search-box">
+          <span className="ico"><Icon name="search" size={18} /></span>
+          <input className="input" placeholder="Search business, profession, area, role..." value={q} onChange={(e) => setQ(e.target.value)} />
+        </div>
       </div>
       {isLoading ? <Spinner /> : list.length === 0 ? <EmptyState icon="briefcase" title="No businesses found" /> : (
         <div className="grid grid-2">

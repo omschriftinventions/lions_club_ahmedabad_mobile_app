@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
@@ -33,6 +34,7 @@ const EgainsView: React.FC<{ m: any }> = ({ m }) => {
 
 export default function Profile() {
   const qc = useQueryClient();
+  const nav = useNavigate();
   const { member: authMember } = useAuth();
   const [editing, setEditing] = useState(false);
   const [pwOpen, setPwOpen] = useState(false);
@@ -60,8 +62,9 @@ export default function Profile() {
 
   return (
     <>
-      <div className="page-head">
-        <h1>My Profile</h1>
+      <div className="page-head with-back">
+        <button className="back-btn" onClick={() => nav(-1)} title="Back"><Icon name="back" size={20} /></button>
+        <h1 style={{ flex: 1 }}>My Profile</h1>
         <button className="btn primary" onClick={() => setEditing(true)}><Icon name="edit" size={16} /> Edit profile</button>
         <button className="btn outline" onClick={() => setPwOpen(true)}><Icon name="settings" size={16} /> Change password</button>
       </div>

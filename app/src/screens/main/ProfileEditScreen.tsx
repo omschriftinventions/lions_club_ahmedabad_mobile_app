@@ -77,7 +77,7 @@ export default function ProfileEditScreen() {
   return (
     <Screen bg={T.bg}>
       <View style={{ flexDirection: 'row', padding: 16, alignItems: 'center', gap: 12 }}>
-        <Pressable onPress={() => nav.goBack()}><Ionicons name="close" size={26} color={T.ink} /></Pressable>
+        <Pressable onPress={() => nav.goBack()} hitSlop={10}><Ionicons name="chevron-back" size={26} color={T.ink} /></Pressable>
         <Text style={{ fontSize: 17, fontWeight: '700', color: T.ink }}>Edit profile</Text>
       </View>
       <ScrollView style={{ paddingHorizontal: 16 }}>

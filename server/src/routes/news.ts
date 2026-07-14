@@ -37,12 +37,13 @@ router.get('/:id', async (req: AuthedRequest, res) => {
   res.json({ news: rows[0] });
 });
 
+const blankToNull = (v: unknown) => (typeof v === 'string' && v.trim() === '' ? null : v);
 const upsert = z.object({
   title: z.string().min(2).max(200),
-  tag: z.string().max(40).optional().nullable(),
-  excerpt: z.string().max(400).optional().nullable(),
-  body: z.string().max(15 * 1024 * 1024).optional().nullable(),
-  cover_url: z.string().url().optional().nullable(),
+  tag: z.preprocess(blankToNull, z.string().max(40).nullable().optional()),
+  excerpt: z.preprocess(blankToNull, z.string().max(400).nullable().optional()),
+  body: z.preprocess(blankToNull, z.string().max(15 * 1024 * 1024).nullable().optional()),
+  cover_url: z.preprocess(blankToNull, z.string().url().nullable().optional()),
   published: z.boolean().default(true),
 });
 

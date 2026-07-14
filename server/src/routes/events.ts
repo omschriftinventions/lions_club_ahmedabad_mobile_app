@@ -52,23 +52,33 @@ router.get('/:id', async (req: AuthedRequest, res) => {
   res.json({ event: rows[0], attendees });
 });
 
+// Empty strings from the form become null (avoids FK/url validation errors).
+const blankToNull = (v: unknown) => (typeof v === 'string' && v.trim() === '' ? null : v);
 const upsert = z.object({
   title: z.string().min(2).max(200),
   type: z.enum(['Signature','Service','Meeting','Fellowship','Other']),
   starts_at: z.string(),
-  ends_at: z.string().optional().nullable(),
-  venue: z.string().max(200).optional().nullable(),
-  description: z.string().max(15 * 1024 * 1024).optional().nullable(),
-  cause_id: z.string().max(40).optional().nullable(),
-  cover_url: z.string().url().optional().nullable(),
+  ends_at: z.preprocess(blankToNull, z.string().nullable().optional()),
+  venue: z.preprocess(blankToNull, z.string().max(200).nullable().optional()),
+  description: z.preprocess(blankToNull, z.string().max(15 * 1024 * 1024).nullable().optional()),
+  cause_id: z.preprocess(blankToNull, z.string().max(40).nullable().optional()),
+  cover_url: z.preprocess(blankToNull, z.string().url().nullable().optional()),
 });
+
+// Only keep cause_id if it points at a real cause; otherwise NULL (prevents FK error).
+async function safeCauseId(cause_id: string | null | undefined): Promise<string | null> {
+  if (!cause_id) return null;
+  const rows = await query<(RowDataPacket & { id: string })[]>(`SELECT id FROM causes WHERE id = :c LIMIT 1`, { c: cause_id });
+  return rows.length ? cause_id : null;
+}
 
 router.post('/', requireEditor, async (req: AuthedRequest, res) => {
   const data = upsert.parse(req.body);
+  const cause_id = await safeCauseId(data.cause_id ?? null);
   const r = await exec(
     `INSERT INTO events (club_id, title, type, starts_at, ends_at, venue, description, cause_id, cover_url, created_by)
      VALUES (:clubId, :title, :type, :starts_at, :ends_at, :venue, :description, :cause_id, :cover_url, :me)`,
-    { ...data, clubId: req.user!.clubId, me: req.user!.sub }
+    { ...data, cause_id, clubId: req.user!.clubId, me: req.user!.sub }
   );
   // fire-and-forget push
   broadcastToClub(req.user!.clubId, {
@@ -81,7 +91,8 @@ router.post('/', requireEditor, async (req: AuthedRequest, res) => {
 
 router.patch('/:id', requireEditor, async (req: AuthedRequest, res) => {
   const id = z.coerce.number().int().parse(req.params.id);
-  const data = upsert.partial().parse(req.body);
+  const data: any = upsert.partial().parse(req.body);
+  if ('cause_id' in data) data.cause_id = await safeCauseId(data.cause_id ?? null);
   const sets = Object.keys(data).map(k => `${k} = :${k}`);
   if (sets.length === 0) return res.json({ ok: true });
   await exec(`UPDATE events SET ${sets.join(', ')} WHERE id = :id AND club_id = :clubId`, { ...data, id, clubId: req.user!.clubId });
