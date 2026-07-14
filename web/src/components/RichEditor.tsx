@@ -16,9 +16,20 @@ function toPx(v: string): number | null {
   }
 }
 
-// Strip Word/Google-Docs cruft, rewire pasted images to uploaded URLs,
-// preserve intended image sizes. `uploaded` = clipboard image URLs in order.
-function cleanPastedHtml(rawHtml: string, uploaded: string[]): string {
+// Style properties worth keeping from Word/Docs paste (alignment, colour,
+// bold/italic, background, borders...). Everything else (mso-*, tab-stops,
+// positioning) is dropped.
+const KEEP_STYLE = /^(text-align|text-decoration|font-weight|font-style|font-size|color|background(-color)?|vertical-align|list-style(-type)?|border[a-z-]*|padding[a-z-]*|width|height|max-width)$/i;
+
+// Strip Word/Google-Docs cruft, rewire pasted images to uploaded URLs, keep
+// alignment + basic formatting, preserve image sizes. Async because embedded
+// base64 images are uploaded to the server. `clipboardUrls` = uploaded clipboard
+// images in order (used to fill dead file:// refs).
+async function cleanPastedHtml(
+  rawHtml: string,
+  clipboardUrls: string[],
+  uploadImage: (dataUrl: string) => Promise<string>,
+): Promise<string> {
   // Kill Word conditional comments + xml islands before DOM parse.
   let html = rawHtml
     .replace(/<!--\[if[\s\S]*?<!\[endif\]-->/gi, "")
@@ -30,25 +41,33 @@ function cleanPastedHtml(rawHtml: string, uploaded: string[]): string {
     .replace(/<o:p\b[^>]*\/?>/gi, "");
 
   const doc = new DOMParser().parseFromString(html, "text/html");
-  const imgQueue = [...uploaded];
+  const imgQueue = [...clipboardUrls];
 
   // Rewire VML images (<v:imagedata src>) — replace their shape wrapper with a real <img>.
   doc.querySelectorAll("v\\:imagedata, imagedata").forEach((vml) => {
     const img = doc.createElement("img");
     const shape = vml.closest("v\\:shape, shape") || vml;
-    const url = imgQueue.shift();
-    if (url) img.setAttribute("src", url);
-    shape.replaceWith(img);
+    const dataUrlAttr = (vml.getAttribute("src") || "").startsWith("data:") ? vml.getAttribute("src")! : "";
+    const url = dataUrlAttr || imgQueue.shift();
+    if (url) { img.setAttribute("src", url); shape.replaceWith(img); }
+    else shape.remove();
   });
 
-  doc.querySelectorAll("img").forEach((img) => {
-    const src = img.getAttribute("src") || "";
-    const dead = !src || /^(file:|blob:|cid:|about:)/i.test(src) || src.startsWith("data:image/svg");
+  // Resolve every <img>: keep data:/http srcs, fill dead file:// from clipboard,
+  // upload embedded base64 to keep stored HTML small, and preserve size.
+  const imgs = Array.from(doc.querySelectorAll("img"));
+  for (const img of imgs) {
+    let src = img.getAttribute("src") || "";
+    const dead = !src || /^(file:|blob:|cid:|about:)/i.test(src) || /^data:image\/svg/i.test(src);
     if (dead) {
       const url = imgQueue.shift();
-      if (url) img.setAttribute("src", url);
-      else { img.remove(); return; }
+      if (url) src = url; else { img.remove(); continue; }
     }
+    if (/^data:image\//i.test(src) && !/^data:image\/svg/i.test(src)) {
+      src = await uploadImage(src); // → server URL (falls back to data: on failure)
+    }
+    img.setAttribute("src", src);
+
     // Preserve intended size from width/height attrs or inline style.
     const styleW = img.style.width, styleH = img.style.height;
     const attrW = img.getAttribute("width"), attrH = img.getAttribute("height");
@@ -60,17 +79,20 @@ function cleanPastedHtml(rawHtml: string, uploaded: string[]): string {
     if (hPx && !wPx) parts.push(`height:${hPx}px`);
     img.setAttribute("style", parts.join(";"));
     img.setAttribute("alt", img.getAttribute("alt") || "");
-  });
+  }
 
-  // Strip mso-* inline styles + Word classes/attrs on every element.
+  // Clean every element: drop Word namespaces, keep alignment + basic styles.
   doc.body.querySelectorAll<HTMLElement>("*").forEach((el) => {
-    // remove Word/xml namespaced elements (keep their text)
+    if (el.tagName === "IMG") return;
+    // unwrap Word/xml namespaced elements (keep their children)
     if (/^(o|w|v|m|st1):/i.test(el.tagName)) {
       const parent = el.parentNode;
       while (el.firstChild) parent?.insertBefore(el.firstChild, el);
       el.remove();
       return;
     }
+    // Word alignment sometimes lives on an align="" attribute — convert to style.
+    const alignAttr = el.getAttribute("align");
     el.removeAttribute("class");
     el.removeAttribute("lang");
     el.removeAttribute("align");
@@ -78,13 +100,18 @@ function cleanPastedHtml(rawHtml: string, uploaded: string[]): string {
       if (/^(xmlns|v|o|w|m):/i.test(a.name) || a.name.startsWith("data-mce")) el.removeAttribute(a.name);
     }
     const style = el.getAttribute("style");
+    const kept: string[] = [];
     if (style) {
-      const kept = style.split(";")
-        .map((s) => s.trim())
-        .filter((s) => s && !/^mso-/i.test(s) && !/^(font-family|tab-stops|text-indent|line-height)\s*:/i.test(s));
-      if (kept.length) el.setAttribute("style", kept.join(";")); else el.removeAttribute("style");
+      style.split(";").forEach((decl) => {
+        const [propRaw, ...rest] = decl.split(":");
+        const prop = (propRaw || "").trim();
+        const val = rest.join(":").trim();
+        if (prop && val && KEEP_STYLE.test(prop) && !/^mso-/i.test(prop)) kept.push(`${prop}:${val}`);
+      });
     }
-    // Empty paragraphs Word leaves behind
+    if (alignAttr && !kept.some((s) => /^text-align/i.test(s))) kept.push(`text-align:${alignAttr}`);
+    if (kept.length) el.setAttribute("style", kept.join(";")); else el.removeAttribute("style");
+
     if (el.tagName === "P" && !el.textContent?.trim() && !el.querySelector("img")) el.remove();
   });
 
@@ -104,6 +131,46 @@ export const RichEditor: React.FC<{
   const fileImgRef = useRef<HTMLInputElement>(null);
   const filePdfRef = useRef<HTMLInputElement>(null);
   const loaded = useRef(false);
+  const savedRange = useRef<Range | null>(null);
+
+  // Remember the caret/selection so we can insert correctly even after async
+  // work (image uploads) — execCommand("insertHTML") silently fails once the
+  // paste event has returned, so we insert via the Range API instead.
+  const saveSelection = () => {
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount && editorRef.current?.contains(sel.anchorNode)) {
+      savedRange.current = sel.getRangeAt(0).cloneRange();
+    } else {
+      savedRange.current = null;
+    }
+  };
+
+  // Insert an HTML fragment at the saved selection (or append to end). Works
+  // synchronously OR after an await, unlike document.execCommand.
+  const insertHtmlAtSaved = (html: string) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    editor.focus();
+    const sel = window.getSelection();
+    let range = savedRange.current;
+    if (!range || !editor.contains(range.commonAncestorContainer)) {
+      range = document.createRange();
+      range.selectNodeContents(editor);
+      range.collapse(false); // end
+    }
+    range.deleteContents();
+    const frag = range.createContextualFragment(html);
+    const lastNode = frag.lastChild;
+    range.insertNode(frag);
+    if (lastNode) {
+      range.setStartAfter(lastNode);
+      range.collapse(true);
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+      savedRange.current = range.cloneRange();
+    }
+    sync();
+  };
 
   // Load initial content once (when the saved value first arrives).
   useEffect(() => {
@@ -148,15 +215,19 @@ export const RichEditor: React.FC<{
   };
 
   const insertImageFile = async (file: File) => {
+    saveSelection();
     const dataUrl = await fileToDataUrl(file);
     const url = await uploadImage(dataUrl);
-    insertHtml(`<img src="${url}" alt="" style="max-width:100%;height:auto;border-radius:10px;margin:8px 0" />`);
+    insertHtmlAtSaved(`<img src="${url}" alt="" style="max-width:100%;height:auto;border-radius:10px;margin:8px 0" />`);
   };
 
   const onPaste = (e: React.ClipboardEvent) => {
     const cd = e.clipboardData;
     const html = cd.getData("text/html");
     const imageFiles = collectImageFiles(cd);
+
+    // Capture caret BEFORE any async work so we can insert at the right spot.
+    saveSelection();
 
     // Plain image paste (screenshot / single image, no HTML)
     if (imageFiles.length && !html) {
@@ -196,13 +267,15 @@ export const RichEditor: React.FC<{
       const dataUrl = await fileToDataUrl(f);
       uploaded.push(await uploadImage(dataUrl));
     }
-    // 2. Clean Word/Docs cruft and rewire image sources.
-    const clean = cleanPastedHtml(rawHtml, uploaded);
-    insertHtml(clean);
+    // 2. Upload any base64 data: images already embedded in the pasted HTML
+    //    (Edge/Word often inline images this way) so the stored HTML stays small.
+    const clean = await cleanPastedHtml(rawHtml, uploaded, uploadImage);
+    insertHtmlAtSaved(clean);
   };
 
   const onPickImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    saveSelection();
     if (file) insertImageFile(file);
     e.target.value = "";
   };
@@ -211,12 +284,13 @@ export const RichEditor: React.FC<{
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
+    saveSelection();
     const reader = new FileReader();
     reader.onload = async () => {
       try {
         const d = await api.post<{ url: string }>("/content/upload-pdf", { file: String(reader.result) });
         const viewer = "https://docs.google.com/viewer?url=" + encodeURIComponent(d.url) + "&embedded=true";
-        insertHtml(
+        insertHtmlAtSaved(
           '<iframe src="' + viewer + '" style="width:100%;height:600px;border:0;border-radius:10px" allowfullscreen></iframe>' +
           '<p style="text-align:center;margin-top:8px"><a href="' + d.url + '" target="_blank" rel="noopener">Open PDF in new tab</a></p>'
         );
