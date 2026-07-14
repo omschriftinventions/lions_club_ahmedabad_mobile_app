@@ -54,10 +54,40 @@ export default function ManageRoster() {
   );
 }
 
+const ROLES = ['MEMBER', 'PRESIDENT', 'SECRETARY', 'TREASURER', 'VP1', 'VP2', 'MEMBERSHIP_CHAIR', 'SERVICE_CHAIR', 'TAIL_TWISTER'];
+
 const ManageMemberModal: React.FC<{ member: any; onClose: () => void }> = ({ member, onClose }) => {
   const [avatarUrl, setAvatarUrl] = useState(member.avatar_url || '');
   const [uploading, setUploading] = useState(false);
   const [pw, setPw] = useState('');
+  const [f, setF] = useState({
+    name: member.name ?? '', role: member.role ?? 'MEMBER',
+    designation: member.designation ?? '', profession: member.profession ?? '',
+    business: member.business ?? '', area: member.area ?? '',
+    phone: member.phone ?? '', email: member.email ?? '',
+    joined_year: member.joined_year ? String(member.joined_year) : '',
+    dob: member.dob ?? '', anniv: member.anniv ?? '', spouse: member.spouse ?? '',
+    bio: member.bio ?? '', expertise: member.expertise ?? '', goals: member.goals ?? '',
+    accomplishments: member.accomplishments ?? '', interests: member.interests ?? '',
+    network: member.network ?? '', social: member.social ?? '',
+  });
+  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => setF({ ...f, [k]: e.target.value });
+
+  const saveDetails = useMutation({
+    mutationFn: () => api.patch(`/members/${member.id}`, {
+      name: f.name, role: f.role,
+      designation: f.designation || null, profession: f.profession || null,
+      business: f.business || null, area: f.area || null,
+      phone: f.phone || null, phone_e164: f.phone || null, email: f.email || null,
+      joined_year: f.joined_year && /^\d{4}$/.test(f.joined_year) ? Number(f.joined_year) : null,
+      dob: f.dob || null, anniv: f.anniv || null, spouse: f.spouse || null,
+      bio: f.bio || null, expertise: f.expertise || null, goals: f.goals || null,
+      accomplishments: f.accomplishments || null, interests: f.interests || null,
+      network: f.network || null, social: f.social || null,
+    }),
+    onSuccess: () => alert('Member details saved'),
+    onError: (e: any) => alert(e.message || 'Save failed'),
+  });
 
   const uploadAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
@@ -94,6 +124,47 @@ const ManageMemberModal: React.FC<{ member: any; onClose: () => void }> = ({ mem
           <div className="hint" style={{ marginTop: 6 }}>JPG/PNG/WebP, up to 4 MB.</div>
         </div>
       </div>
+
+      <hr className="divider" />
+
+      {/* Full member details */}
+      <div className="card-title">Member Details</div>
+      <div className="row-2">
+        <Field label="Name"><input className="input" value={f.name} onChange={set('name')} /></Field>
+        <Field label="Role"><select className="select" value={f.role} onChange={set('role')}>{ROLES.map((r) => <option key={r}>{r}</option>)}</select></Field>
+      </div>
+      <div className="row-2">
+        <Field label="Designation"><input className="input" value={f.designation} onChange={set('designation')} placeholder="PMJF / MJF" /></Field>
+        <Field label="Joined year"><input className="input" value={f.joined_year} onChange={set('joined_year')} placeholder="2015" /></Field>
+      </div>
+      <div className="row-2">
+        <Field label="Profession"><input className="input" value={f.profession} onChange={set('profession')} /></Field>
+        <Field label="Business"><input className="input" value={f.business} onChange={set('business')} /></Field>
+      </div>
+      <div className="row-2">
+        <Field label="Area"><input className="input" value={f.area} onChange={set('area')} /></Field>
+        <Field label="Phone"><input className="input" value={f.phone} onChange={set('phone')} placeholder="+91 98250 12345" /></Field>
+      </div>
+      <div className="row-2">
+        <Field label="Email"><input className="input" value={f.email} onChange={set('email')} /></Field>
+        <Field label="Spouse"><input className="input" value={f.spouse} onChange={set('spouse')} /></Field>
+      </div>
+      <div className="row-2">
+        <Field label="Birthday"><input className="input" value={f.dob} onChange={set('dob')} placeholder="Mar 14" /></Field>
+        <Field label="Anniversary"><input className="input" value={f.anniv} onChange={set('anniv')} placeholder="Nov 22" /></Field>
+      </div>
+      <Field label="Bio"><textarea className="textarea" value={f.bio} onChange={set('bio')} rows={2} /></Field>
+
+      <div className="card-title" style={{ marginTop: 12 }}>Networking (E-GAINS)</div>
+      <Field label="Expertise"><textarea className="textarea" value={f.expertise} onChange={set('expertise')} rows={2} /></Field>
+      <Field label="Goals"><textarea className="textarea" value={f.goals} onChange={set('goals')} rows={2} /></Field>
+      <Field label="Accomplishments"><textarea className="textarea" value={f.accomplishments} onChange={set('accomplishments')} rows={2} /></Field>
+      <Field label="Interests"><textarea className="textarea" value={f.interests} onChange={set('interests')} rows={2} /></Field>
+      <Field label="Network"><textarea className="textarea" value={f.network} onChange={set('network')} rows={2} /></Field>
+      <Field label="Social connections"><textarea className="textarea" value={f.social} onChange={set('social')} rows={2} /></Field>
+      <button className="btn primary sm" style={{ marginTop: 10 }} disabled={saveDetails.isPending || f.name.trim().length < 2} onClick={() => saveDetails.mutate()}>
+        {saveDetails.isPending ? 'Saving...' : 'Save member details'}
+      </button>
 
       <hr className="divider" />
 
