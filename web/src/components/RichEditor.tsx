@@ -19,7 +19,7 @@ function toPx(v: string): number | null {
 // Style properties worth keeping from Word/Docs paste (alignment, colour,
 // bold/italic, background, borders...). Everything else (mso-*, tab-stops,
 // positioning) is dropped.
-const KEEP_STYLE = /^(text-align|text-decoration|font-weight|font-style|font-size|color|background(-color)?|vertical-align|list-style(-type)?|border[a-z-]*|padding[a-z-]*|width|height|max-width)$/i;
+const KEEP_STYLE = /^(text-align|text-decoration|font-weight|font-style|font-size|line-height|color|background(-color)?|vertical-align|list-style(-type)?|border[a-z-]*|padding[a-z-]*|margin[a-z-]*|width|height|max-width)$/i;
 
 // Strip Word/Google-Docs cruft, rewire pasted images to uploaded URLs, keep
 // alignment + basic formatting, preserve image sizes. Async because embedded
@@ -301,6 +301,42 @@ export const RichEditor: React.FC<{
     reader.readAsDataURL(file);
   };
 
+  // Apply a line-height to every block element that the current selection touches.
+  const BLOCK_TAGS = new Set(["P", "DIV", "LI", "H1", "H2", "H3", "H4", "H5", "H6", "BLOCKQUOTE", "TD", "TH"]);
+  const setLineHeight = (val: string) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    editor.focus();
+    const sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return;
+    const range = sel.getRangeAt(0);
+    const blockOf = (n: Node | null): HTMLElement | null => {
+      let el: Node | null = n;
+      while (el && el !== editor) {
+        if (el.nodeType === 1 && BLOCK_TAGS.has((el as HTMLElement).tagName)) return el as HTMLElement;
+        el = el.parentNode;
+      }
+      return null;
+    };
+    const targets = new Set<HTMLElement>();
+    const startB = blockOf(range.startContainer);
+    const endB = blockOf(range.endContainer);
+    if (startB) targets.add(startB);
+    if (endB) targets.add(endB);
+    // any block between start and end that the range intersects
+    editor.querySelectorAll<HTMLElement>("p,div,li,h1,h2,h3,h4,h5,h6,blockquote,td,th").forEach((b) => {
+      if (range.intersectsNode(b)) targets.add(b);
+    });
+    // If the selection is empty and no block found, wrap editor content minimally
+    if (targets.size === 0) editor.style.lineHeight = val;
+    targets.forEach((b) => { b.style.lineHeight = val; });
+    sync();
+  };
+
+  const AlignBtn = ({ cmdName, label, title }: { cmdName: string; label: string; title: string }) => (
+    <button type="button" className="btn ghost sm" onMouseDown={(e) => e.preventDefault()} onClick={() => cmd(cmdName)} title={title}>{label}</button>
+  );
+
   return (
     <div>
       <div className="rte-toolbar" style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10, paddingBottom: 10, borderBottom: "1px solid var(--line)" }}>
@@ -310,6 +346,27 @@ export const RichEditor: React.FC<{
         <button type="button" className="btn ghost sm" onClick={() => cmd("formatBlock", "<H2>")} title="Heading">H2</button>
         <button type="button" className="btn ghost sm" onClick={() => cmd("formatBlock", "<H3>")} title="Subheading">H3</button>
         <button type="button" className="btn ghost sm" onClick={() => cmd("formatBlock", "<P>")} title="Paragraph">&para;</button>
+        <span style={{ width: 1, alignSelf: "stretch", background: "var(--line)", margin: "0 2px" }} />
+        <AlignBtn cmdName="justifyLeft"   label="⬅" title="Align left" />
+        <AlignBtn cmdName="justifyCenter" label="↔" title="Align center" />
+        <AlignBtn cmdName="justifyRight"  label="➡" title="Align right" />
+        <AlignBtn cmdName="justifyFull"   label="☰" title="Justify" />
+        <select
+          className="input sm"
+          defaultValue=""
+          onMouseDown={(e) => e.stopPropagation()}
+          onChange={(e) => { const v = e.target.value; if (v) setLineHeight(v); e.target.value = ""; }}
+          title="Line spacing"
+          style={{ height: 30, padding: "0 6px", fontSize: 12, borderRadius: 6 }}
+        >
+          <option value="" disabled>↕ Spacing</option>
+          <option value="1">Single (1.0)</option>
+          <option value="1.15">1.15</option>
+          <option value="1.5">1.5</option>
+          <option value="2">Double (2.0)</option>
+          <option value="2.5">2.5</option>
+        </select>
+        <span style={{ width: 1, alignSelf: "stretch", background: "var(--line)", margin: "0 2px" }} />
         <button type="button" className="btn ghost sm" onClick={() => cmd("insertUnorderedList")} title="Bullet list">&bull; List</button>
         <button type="button" className="btn ghost sm" onClick={() => cmd("insertOrderedList")} title="Numbered list">1. List</button>
         <button type="button" className="btn ghost sm" onClick={() => { const u = prompt("Link URL:"); if (u) cmd("createLink", u); }} title="Insert link"><Icon name="link" size={16} /></button>
