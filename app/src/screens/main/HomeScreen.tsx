@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, FlatList, ActivityIndicator, Modal } from 'react-native';
+import { View, Text, Pressable, FlatList, ActivityIndicator, Modal, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
@@ -183,11 +183,11 @@ export default function HomeScreen() {
         <Pressable onPress={closeMenu} style={{ flex: 1, backgroundColor: 'rgba(10,22,40,0.45)' }}>
           <Pressable onPress={() => {}} style={{
             width: 280, height: '100%', backgroundColor: T.surface,
-            paddingTop: 60, paddingHorizontal: 20,
+            paddingTop: 60,
             shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 16, shadowOffset: { width: 4, height: 0 },
             elevation: 16,
           }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16, paddingHorizontal: 20 }}>
               <Avatar
                 initials={(member?.name ?? 'L L').split(' ').slice(-2).map(w => w[0]).join('')}
                 size={48}
@@ -199,6 +199,7 @@ export default function HomeScreen() {
               </View>
             </View>
 
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
             <MenuRow icon="home"            label="Home"             onPress={closeMenu} />
             <MenuRow icon="people"          label="Roster"           onPress={() => go('Main', { screen: 'Roster' })} />
             <MenuRow icon="calendar"        label="Events"           onPress={() => go('Main', { screen: 'Events' })} />
@@ -244,6 +245,7 @@ export default function HomeScreen() {
             <MenuRow icon="information-circle" label="About"      onPress={() => go('Info')} />
             <MenuRow icon="time" label="History" onPress={() => go('History')} />
             <MenuRow icon="log-out" label="Sign out" color={T.danger} onPress={() => { closeMenu(); logout(); }} />
+            </ScrollView>
           </Pressable>
         </Pressable>
       </Modal>
