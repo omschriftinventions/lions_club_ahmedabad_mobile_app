@@ -13,6 +13,7 @@ import { api } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 import { T } from '../../theme/tokens';
 import { AdCarousel } from '../../components/AdCarousel';
+import { HtmlView } from '../../components/HtmlView';
 import { Linking } from 'react-native';
 
 interface ImpactRow { id: string; name: string; icon: string; color: string; units: number; amount_inr: number; }
@@ -38,6 +39,11 @@ export default function HomeScreen() {
     queryKey: ['news', 'recent'],
     queryFn: () => api.get<{ news: NewsRow[] }>('/news?limit=4'),
   });
+  const history = useQuery({
+    queryKey: ['content', 'history'],
+    queryFn: () => api.get<{ html: string }>('/content/history'),
+  });
+  const historyHasContent = !!history.data?.html && history.data.html.replace(/<[^>]*>/g, '').trim().length > 0;
 
   return (
     <Screen bg={T.bg}>
@@ -153,6 +159,24 @@ export default function HomeScreen() {
           </Pressable>
         ))}
       </View>
+
+      {/* Our History */}
+      {historyHasContent && (
+        <View style={{ paddingHorizontal: 20, paddingTop: 24 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
+            <Text style={{ fontSize: 17, fontWeight: '800', color: T.ink }}>Our History</Text>
+            <Pressable onPress={() => nav.navigate('History')}>
+              <Text style={{ fontSize: 13, color: T.brandBlue, fontWeight: '600' }}>Read more</Text>
+            </Pressable>
+          </View>
+          <Card pad={14}>
+            <HtmlView html={history.data!.html} />
+            <Pressable onPress={() => nav.navigate('History')} style={{ marginTop: 10 }}>
+              <Text style={{ color: T.brandBlue, fontWeight: '700', fontSize: 13 }}>Open full history →</Text>
+            </Pressable>
+          </Card>
+        </View>
+      )}
 
       {/* Left-slide menu */}
       <Modal visible={menuOpen} transparent animationType="fade" onRequestClose={closeMenu}>
