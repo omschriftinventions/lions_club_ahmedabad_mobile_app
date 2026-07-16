@@ -91,28 +91,32 @@ router.get('/:id', async (req: AuthedRequest, res) => {
   res.json({ member: rows[0] });
 });
 
+// Empty string from a form field means "not set" → null, so optional
+// fields don't trip .email()/.regex()/number validation. Only name is required.
+const blank = (s: z.ZodTypeAny) => z.preprocess((v) => (v === '' ? null : v), s);
+
 const upsertSchema = z.object({
   name: z.string().min(2).max(160),
   role: z.string(),
-  designation: z.string().max(40).optional().nullable(),
-  profession: z.string().max(120).optional().nullable(),
-  business: z.string().max(160).optional().nullable(),
-  area: z.string().max(120).optional().nullable(),
-  phone: z.string().max(20).optional().nullable(),
-  phone_e164: z.string().max(20).optional().nullable(),
-  email: z.string().email().max(160).optional().nullable(),
-  joined_year: z.number().int().optional().nullable(),
-  dob: z.string().max(20).optional().nullable(),
-  anniv: z.string().max(20).optional().nullable(),
-  spouse: z.string().max(120).optional().nullable(),
-  avatar_color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional().nullable(),
-  bio: z.string().max(5000).optional().nullable(),
-  expertise: z.string().max(2000).optional().nullable(),
-  goals: z.string().max(2000).optional().nullable(),
-  accomplishments: z.string().max(2000).optional().nullable(),
-  interests: z.string().max(2000).optional().nullable(),
-  network: z.string().max(2000).optional().nullable(),
-  social: z.string().max(2000).optional().nullable(),
+  designation: blank(z.string().max(40).nullable()).optional(),
+  profession: blank(z.string().max(120).nullable()).optional(),
+  business: blank(z.string().max(160).nullable()).optional(),
+  area: blank(z.string().max(120).nullable()).optional(),
+  phone: blank(z.string().max(20).nullable()).optional(),
+  phone_e164: blank(z.string().max(20).nullable()).optional(),
+  email: blank(z.string().email().max(160).nullable()).optional(),
+  joined_year: blank(z.coerce.number().int().nullable()).optional(),
+  dob: blank(z.string().max(20).nullable()).optional(),
+  anniv: blank(z.string().max(20).nullable()).optional(),
+  spouse: blank(z.string().max(120).nullable()).optional(),
+  avatar_color: blank(z.string().regex(/^#[0-9A-Fa-f]{6}$/).nullable()).optional(),
+  bio: blank(z.string().max(5000).nullable()).optional(),
+  expertise: blank(z.string().max(2000).nullable()).optional(),
+  goals: blank(z.string().max(2000).nullable()).optional(),
+  accomplishments: blank(z.string().max(2000).nullable()).optional(),
+  interests: blank(z.string().max(2000).nullable()).optional(),
+  network: blank(z.string().max(2000).nullable()).optional(),
+  social: blank(z.string().max(2000).nullable()).optional(),
 });
 
 router.post('/', requireEditor, async (req: AuthedRequest, res) => {

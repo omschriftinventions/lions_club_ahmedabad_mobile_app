@@ -27,7 +27,7 @@ async function request<T>(path: string, init: RequestInit = {}, retry = true): P
   const text = await res.text();
   const data = text ? JSON.parse(text) : {};
   if (!res.ok) {
-    const err = new Error(data.error || `HTTP ${res.status}`) as ApiError;
+    const err = new Error(data.message || data.error || `HTTP ${res.status}`) as ApiError;
     err.status = res.status;
     err.code = data.code;
     throw err;
