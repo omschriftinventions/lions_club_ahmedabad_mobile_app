@@ -3,6 +3,8 @@ import { View, Text, TextInput, Pressable, Alert, ScrollView } from 'react-nativ
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system/legacy';
 import { Screen } from '../../components/Screen';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
@@ -32,12 +34,43 @@ export default function OfficerAdminScreen() {
         <Text style={{ fontSize: 17, fontWeight: '700', color: T.ink }}>Officer Admin</Text>
       </View>
       <ScrollView style={{ paddingHorizontal: 16 }}>
+        <ImportEvents onDone={() => qc.invalidateQueries({ queryKey: ['events'] })} />
         <NewEventForm onCreated={() => qc.invalidateQueries({ queryKey: ['events'] })} />
         <NewNewsForm onCreated={() => qc.invalidateQueries({ queryKey: ['news'] })} />
       </ScrollView>
     </Screen>
   );
 }
+
+const ImportEvents = ({ onDone }: { onDone: () => void }) => {
+  const [busy, setBusy] = useState(false);
+  const pick = async () => {
+    try {
+      const res = await DocumentPicker.getDocumentAsync({
+        type: ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel', '.xlsx', '.xls'],
+        copyToCacheDirectory: true,
+      });
+      if (res.canceled || !res.assets?.[0]) return;
+      setBusy(true);
+      const uri = res.assets[0].uri;
+      const b64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+      const r = await api.post<any>('/events/import', { file: b64 });
+      Alert.alert('Import complete', `Created ${r.created}, updated ${r.updated}, skipped ${r.skipped}.` + (r.errors?.length ? `\n\n${r.errors.join('\n')}` : ''));
+      onDone();
+    } catch (e: any) {
+      Alert.alert('Import failed', e?.message ?? 'Try again');
+    } finally { setBusy(false); }
+  };
+  return (
+    <Card style={{ marginBottom: 16 }}>
+      <Text style={{ fontSize: 17, fontWeight: '800', color: T.ink, marginBottom: 6 }}>Import from Excel</Text>
+      <Text style={{ color: T.inkMute, fontSize: 13, marginBottom: 12 }}>
+        Upload a Service Activity Report (.xlsx). Rows matched by Code No. (or title + date) are added or updated.
+      </Text>
+      <Button label={busy ? 'Importing…' : 'Choose Excel file'} variant="outline" onPress={pick} loading={busy} />
+    </Card>
+  );
+};
 
 const calcHours = (tin: string, tout: string): number | null => {
   const pm = (t: string) => { const m = t.match(/^(\d{1,2}):(\d{2})/); return m ? +m[1] * 60 + +m[2] : null; };

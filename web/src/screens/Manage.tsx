@@ -84,6 +84,8 @@ const EventForm: React.FC<{ onDone: () => void }> = ({ onDone }) => {
   );
 
   return (
+    <>
+    <ImportEvents onDone={() => qc.invalidateQueries({ queryKey: ['events'] })} />
     <form className="card pad" style={{ maxWidth: 640 }} onSubmit={(e) => { e.preventDefault(); if (f.title && f.starts_at) m.mutate(); }}>
       <Field label="Event title"><input className="input" value={f.title} onChange={set('title')} placeholder="e.g. Monthly Fellowship Dinner" required /></Field>
       <div className="row-2">
@@ -125,6 +127,45 @@ const EventForm: React.FC<{ onDone: () => void }> = ({ onDone }) => {
       {m.error && <div className="pill red" style={{ marginBottom: 12 }}>{(m.error as any).message || 'Could not create event'}</div>}
       <button className="btn primary" disabled={m.isPending}>{m.isPending ? 'Creating...' : 'Create event & notify'}</button>
     </form>
+    </>
+  );
+};
+
+// Excel import for events (Service Activity Report).
+const ImportEvents: React.FC<{ onDone: () => void }> = ({ onDone }) => {
+  const [busy, setBusy] = useState(false);
+  const [summary, setSummary] = useState<any>(null);
+  const onFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; e.target.value = '';
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      setBusy(true); setSummary(null);
+      try {
+        const r = await api.post<any>('/events/import', { file: String(reader.result) });
+        setSummary(r); onDone();
+      } catch (err: any) { setSummary({ error: err?.message || 'Import failed' }); }
+      finally { setBusy(false); }
+    };
+    reader.readAsDataURL(file);
+  };
+  return (
+    <div className="card pad" style={{ maxWidth: 640, marginBottom: 16 }}>
+      <div className="card-title">Import from Excel</div>
+      <p className="muted" style={{ fontSize: 14 }}>Upload a Service Activity Report (.xlsx). Rows are matched by Code No. (or title + date) and added or updated. Columns: Date, Details of Activity, Code No., Venue, Member present, Time in, Time out, Expenses, Beneficiaries.</p>
+      <label className="btn outline" style={{ cursor: 'pointer', display: 'inline-flex', marginTop: 8 }}>
+        {busy ? 'Importing…' : 'Choose Excel file'}
+        <input type="file" accept=".xlsx,.xls" hidden onChange={onFile} disabled={busy} />
+      </label>
+      {summary && (summary.error
+        ? <div className="pill red" style={{ marginTop: 12 }}>{summary.error}</div>
+        : <div style={{ marginTop: 12 }}>
+            <Pill tone="green">Created {summary.created}</Pill>{' '}
+            <Pill tone="blue">Updated {summary.updated}</Pill>{' '}
+            {summary.skipped > 0 && <Pill tone="gray">Skipped {summary.skipped}</Pill>}
+            {summary.errors?.length > 0 && <div className="hint" style={{ marginTop: 8, color: 'var(--red)' }}>{summary.errors.join(' · ')}</div>}
+          </div>)}
+    </div>
   );
 };
 
