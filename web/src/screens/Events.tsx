@@ -8,7 +8,7 @@ import type { ClubEvent } from '../types';
 
 export default function Events() {
   const nav = useNavigate();
-  const [upcoming, setUpcoming] = useState(true);
+  const [upcoming, setUpcoming] = useState(false);
   const { data, isLoading } = useQuery({
     queryKey: ['events', upcoming],
     queryFn: () => api.get<{ events: ClubEvent[] }>(`/events?limit=100${upcoming ? '&upcoming=true' : ''}`),

@@ -27,7 +27,7 @@ router.get('/', async (req: AuthedRequest, res) => {
             (SELECT status FROM rsvps r WHERE r.event_id = e.id AND r.member_id = :me) AS my_status
      FROM events e
      WHERE ${where.join(' AND ')}
-     ORDER BY e.starts_at ASC
+     ORDER BY e.starts_at ${q.upcoming ? 'ASC' : 'DESC'}
      LIMIT :limit`,
     params
   );
