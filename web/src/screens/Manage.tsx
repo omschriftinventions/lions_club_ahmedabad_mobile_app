@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { Icon } from '../components/Icon';
@@ -40,16 +40,33 @@ export default function Manage() {
   );
 }
 
+const calcHours = (tin: string, tout: string): number | null => {
+  const pm = (t: string) => { const m = t.match(/^(\d{1,2}):(\d{2})/); return m ? +m[1] * 60 + +m[2] : null; };
+  const a = pm(tin), b = pm(tout);
+  if (a == null || b == null) return null;
+  let d = b - a; if (d < 0) d += 1440;
+  return Math.round((d / 60) * 100) / 100;
+};
+
 const EventForm: React.FC<{ onDone: () => void }> = ({ onDone }) => {
   const qc = useQueryClient();
-  const [f, setF] = useState({ title: '', type: 'Meeting', starts_at: '', ends_at: '', venue: '', description: '', cause_id: '', cover_url: '' });
+  const emptyForm = { title: '', type: 'Meeting', code_no: '', starts_at: '', ends_at: '', venue: '', description: '', cause_id: '', cover_url: '', time_in: '', time_out: '', expenses: '', beneficiaries: '' };
+  const [f, setF] = useState(emptyForm);
+  const [memberIds, setMemberIds] = useState<number[]>([]);
   const [done, setDone] = useState(false);
   const set = (k: string) => (e: any) => setF({ ...f, [k]: e.target.value });
 
+  const membersQ = useQuery({ queryKey: ['roster', 'all'], queryFn: () => api.get<{ members: any[] }>('/members?limit=500') });
+  const noMembers = memberIds.length;
+  const hours = calcHours(f.time_in, f.time_out);
+  const manHours = hours != null ? Math.round(hours * noMembers * 100) / 100 : null;
+
   const m = useMutation({
     mutationFn: () => api.post('/events', {
-      title: f.title, type: f.type, starts_at: toDbDt(f.starts_at), ends_at: toDbDt(f.ends_at),
+      title: f.title, type: f.type, code_no: f.code_no || null, starts_at: toDbDt(f.starts_at), ends_at: toDbDt(f.ends_at),
       venue: f.venue || null, description: f.description || null, cause_id: f.cause_id || null, cover_url: f.cover_url || null,
+      time_in: f.time_in || null, time_out: f.time_out || null, member_ids: memberIds,
+      expenses: f.expenses || null, beneficiaries: f.beneficiaries || null,
     }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['events'] }); setDone(true); },
   });
@@ -60,7 +77,7 @@ const EventForm: React.FC<{ onDone: () => void }> = ({ onDone }) => {
       <h3 style={{ marginTop: 10 }}>Event created</h3>
       <p className="muted">Members have been notified by push.</p>
       <div className="btn-row" style={{ justifyContent: 'center', marginTop: 14 }}>
-        <button className="btn outline" onClick={() => { setDone(false); setF({ title: '', type: 'Meeting', starts_at: '', ends_at: '', venue: '', description: '', cause_id: '', cover_url: '' }); }}>Create another</button>
+        <button className="btn outline" onClick={() => { setDone(false); setF(emptyForm); setMemberIds([]); }}>Create another</button>
         <button className="btn primary" onClick={onDone}>View events</button>
       </div>
     </div>
@@ -73,13 +90,36 @@ const EventForm: React.FC<{ onDone: () => void }> = ({ onDone }) => {
         <Field label="Type">
           <select className="select" value={f.type} onChange={set('type')}>{EVENT_TYPES.map((t) => <option key={t}>{t}</option>)}</select>
         </Field>
-        <Field label="Cause (optional)"><input className="input" value={f.cause_id} onChange={set('cause_id')} placeholder="e.g. diabetes" /></Field>
+        <Field label="Code No."><input className="input" value={f.code_no} onChange={set('code_no')} placeholder="e.g. s17" /></Field>
       </div>
       <div className="row-2">
+        <Field label="Cause (optional)"><input className="input" value={f.cause_id} onChange={set('cause_id')} placeholder="e.g. diabetes" /></Field>
         <Field label="Starts"><input className="input" type="datetime-local" value={f.starts_at} onChange={set('starts_at')} required /></Field>
-        <Field label="Ends (optional)"><input className="input" type="datetime-local" value={f.ends_at} onChange={set('ends_at')} /></Field>
       </div>
       <Field label="Venue"><input className="input" value={f.venue} onChange={set('venue')} placeholder="Address / location" /></Field>
+
+      <Field label="Members present">
+        <MemberMultiSelect members={membersQ.data?.members ?? []} value={memberIds} onChange={setMemberIds} />
+      </Field>
+
+      <div className="row-2">
+        <Field label="Time in"><input className="input" type="time" value={f.time_in} onChange={set('time_in')} /></Field>
+        <Field label="Time out"><input className="input" type="time" value={f.time_out} onChange={set('time_out')} /></Field>
+      </div>
+
+      <div className="row-2">
+        <Field label="No. of members (auto)"><input className="input" value={noMembers} readOnly style={{ background: 'var(--bg)' }} /></Field>
+        <Field label="No. of hours (auto)"><input className="input" value={hours ?? ''} readOnly style={{ background: 'var(--bg)' }} /></Field>
+      </div>
+      <div className="row-2">
+        <Field label="No. of man hours (auto)"><input className="input" value={manHours ?? ''} readOnly style={{ background: 'var(--bg)' }} /></Field>
+        <Field label="Expenses (₹)"><input className="input" type="number" value={f.expenses} onChange={set('expenses')} placeholder="0" /></Field>
+      </div>
+      <div className="row-2">
+        <Field label="Beneficiaries"><input className="input" type="number" value={f.beneficiaries} onChange={set('beneficiaries')} placeholder="0" /></Field>
+        <Field label="Ends (optional)"><input className="input" type="datetime-local" value={f.ends_at} onChange={set('ends_at')} /></Field>
+      </div>
+
       <Field label="Description"><RichEditor value={f.description} onChange={(h) => setF({ ...f, description: h })} minHeight={180} placeholder="Describe the event. Paste HTML, insert images or a PDF." /></Field>
       <Field label="Cover image URL (optional)"><input className="input" value={f.cover_url} onChange={set('cover_url')} placeholder="https://..." /></Field>
       {m.error && <div className="pill red" style={{ marginBottom: 12 }}>{(m.error as any).message || 'Could not create event'}</div>}
@@ -125,5 +165,41 @@ const NewsForm: React.FC<{ onDone: () => void; qc: any }> = ({ onDone, qc }) => 
       {m.error && <div className="pill red" style={{ marginBottom: 12 }}>{(m.error as any).message || 'Could not publish'}</div>}
       <button className="btn primary" disabled={m.isPending}>{m.isPending ? 'Publishing...' : 'Publish news'}</button>
     </form>
+  );
+};
+// Searchable multi-select for "Members present".
+const MemberMultiSelect: React.FC<{ members: any[]; value: number[]; onChange: (ids: number[]) => void }> = ({ members, value, onChange }) => {
+  const [q, setQ] = useState('');
+  const [open, setOpen] = useState(false);
+  const ql = q.trim().toLowerCase();
+  const filtered = ql ? members.filter((m) => `${m.name} ${m.profession ?? ''}`.toLowerCase().includes(ql)) : members;
+  const byId = new Map(members.map((m) => [m.id, m]));
+  const toggle = (id: number) => onChange(value.includes(id) ? value.filter((x) => x !== id) : [...value, id]);
+  return (
+    <div>
+      {value.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+          {value.map((id) => (
+            <span key={id} onClick={() => toggle(id)} style={{ background: 'var(--blue)', color: '#fff', borderRadius: 999, padding: '3px 10px', fontSize: 13, cursor: 'pointer' }}>
+              {byId.get(id)?.name ?? `#${id}`} ✕
+            </span>
+          ))}
+        </div>
+      )}
+      <input className="input" value={q} placeholder="Search members to add..." onFocus={() => setOpen(true)}
+        onChange={(e) => { setQ(e.target.value); setOpen(true); }} />
+      {open && (
+        <div style={{ maxHeight: 220, overflow: 'auto', border: '1px solid var(--line)', borderRadius: 10, marginTop: 6 }}>
+          {filtered.length === 0 ? <div className="muted" style={{ padding: 12 }}>No members</div> :
+            filtered.map((m) => (
+              <label key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderBottom: '1px solid var(--line-2)', cursor: 'pointer' }}>
+                <input type="checkbox" checked={value.includes(m.id)} onChange={() => toggle(m.id)} />
+                <span>{m.name}</span>{m.profession && <span className="faint" style={{ fontSize: 12 }}>· {m.profession}</span>}
+              </label>
+            ))}
+          <div style={{ textAlign: 'center', padding: 8 }}><button type="button" className="btn ghost sm" onClick={() => setOpen(false)}>Done</button></div>
+        </div>
+      )}
+    </div>
   );
 };

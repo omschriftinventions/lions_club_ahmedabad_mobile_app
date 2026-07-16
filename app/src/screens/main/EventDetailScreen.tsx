@@ -67,6 +67,34 @@ export default function EventDetailScreen() {
           <HtmlView html={e.description} style={{ marginTop: 14 }} />
         )}
 
+        {(e.code_no || e.time_in || e.no_of_members != null || e.expenses != null || e.beneficiaries != null || (e.members_present?.length)) ? (
+          <View style={{ marginTop: 16, backgroundColor: T.surface, borderRadius: T.r.md, padding: 14 }}>
+            <Text style={{ color: T.inkMute, fontSize: 11, fontWeight: '800', letterSpacing: 1, marginBottom: 10 }}>SERVICE ACTIVITY REPORT</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+              {e.code_no != null && <RepStat label="Code No." value={e.code_no} />}
+              {e.time_in && <RepStat label="Time in" value={e.time_in} />}
+              {e.time_out && <RepStat label="Time out" value={e.time_out} />}
+              {e.no_of_members != null && <RepStat label="Members" value={e.no_of_members} />}
+              {e.no_of_hours != null && <RepStat label="Hours" value={e.no_of_hours} />}
+              {e.no_of_man_hours != null && <RepStat label="Man hours" value={e.no_of_man_hours} />}
+              {e.expenses != null && <RepStat label="Expenses" value={`₹${Number(e.expenses).toLocaleString('en-IN')}`} />}
+              {e.beneficiaries != null && <RepStat label="Beneficiaries" value={e.beneficiaries} />}
+            </View>
+            {e.members_present?.length > 0 && (
+              <View style={{ marginTop: 8 }}>
+                <Text style={{ color: T.inkFaint, fontSize: 11, fontWeight: '700', letterSpacing: 0.5, marginBottom: 6 }}>MEMBERS PRESENT</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                  {e.members_present.map((m: any) => (
+                    <View key={m.id} style={{ backgroundColor: T.bg, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
+                      <Text style={{ fontSize: 12, color: T.inkSoft }}>{m.name}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+          </View>
+        ) : null}
+
         <View style={{ flexDirection: 'row', gap: 8, marginTop: 14 }}>
           <Button label={e.my_status === 'yes' ? "You're going ✓" : "I'll be there"} variant={e.my_status === 'yes' ? 'gold' : 'primary'} onPress={() => rsvp.mutate('yes')} loading={rsvp.isPending} />
         </View>
@@ -102,3 +130,10 @@ export default function EventDetailScreen() {
     </Screen>
   );
 }
+
+const RepStat = ({ label, value }: { label: string; value: any }) => (
+  <View style={{ width: '33.33%', marginBottom: 10 }}>
+    <Text style={{ color: T.inkFaint, fontSize: 10, fontWeight: '800', letterSpacing: 0.5 }}>{label.toUpperCase()}</Text>
+    <Text style={{ color: T.ink, fontSize: 15, fontWeight: '800', marginTop: 2 }}>{String(value)}</Text>
+  </View>
+);

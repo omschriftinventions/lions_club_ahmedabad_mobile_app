@@ -70,6 +70,30 @@ export default function EventDetail() {
         </div>
       </div>
 
+      {(e.code_no || e.time_in || e.no_of_members || e.expenses != null || e.beneficiaries != null || (e.members_present?.length)) && (
+        <div className="card pad" style={{ marginBottom: 16 }}>
+          <div className="card-title">Service Activity Report</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(120px,1fr))', gap: 12 }}>
+            {e.code_no && <ReportStat label="Code No." value={e.code_no} />}
+            {e.time_in && <ReportStat label="Time in" value={e.time_in} />}
+            {e.time_out && <ReportStat label="Time out" value={e.time_out} />}
+            {e.no_of_members != null && <ReportStat label="No. of members" value={e.no_of_members} />}
+            {e.no_of_hours != null && <ReportStat label="No. of hours" value={e.no_of_hours} />}
+            {e.no_of_man_hours != null && <ReportStat label="No. of man hours" value={e.no_of_man_hours} />}
+            {e.expenses != null && <ReportStat label="Expenses" value={`₹${Number(e.expenses).toLocaleString('en-IN')}`} />}
+            {e.beneficiaries != null && <ReportStat label="Beneficiaries" value={e.beneficiaries} />}
+          </div>
+          {e.members_present?.length > 0 && (
+            <div style={{ marginTop: 12 }}>
+              <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 700, marginBottom: 6 }}>Members present</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {e.members_present.map((m: any) => <span key={m.id} className="pill" style={{ background: 'var(--bg)' }}>{m.name}</span>)}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="card pad" style={{ marginBottom: 16 }}>
         <div className="card-title">Are you going?</div>
         <div className="btn-row">
@@ -95,3 +119,9 @@ export default function EventDetail() {
     </>
   );
 }
+const ReportStat: React.FC<{ label: string; value: any }> = ({ label, value }) => (
+  <div>
+    <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 700 }}>{label}</div>
+    <div style={{ fontSize: 17, fontWeight: 800, marginTop: 2 }}>{value}</div>
+  </div>
+);
