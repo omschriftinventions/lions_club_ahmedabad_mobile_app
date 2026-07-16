@@ -38,6 +38,7 @@ export default function EventDetailScreen() {
   if (isLoading || !data?.event) return <Screen><ActivityIndicator color={T.brandBlue} style={{ marginTop: 40 }} /></Screen>;
   const e = data.event;
   const d = new Date(e.starts_at);
+  const isPast = e.starts_at ? new Date(e.starts_at).getTime() < Date.now() : false;
 
   return (
     <Screen bg={T.bgWarm}>
@@ -80,28 +81,41 @@ export default function EventDetailScreen() {
               {e.expenses != null && <RepStat label="Expenses" value={`₹${Number(e.expenses).toLocaleString('en-IN')}`} />}
               {e.beneficiaries != null && <RepStat label="Beneficiaries" value={e.beneficiaries} />}
             </View>
-            {e.members_present?.length > 0 && (
+            {(e.members_present?.length > 0 || e.member_names) && (
               <View style={{ marginTop: 8 }}>
                 <Text style={{ color: T.inkFaint, fontSize: 11, fontWeight: '700', letterSpacing: 0.5, marginBottom: 6 }}>MEMBERS PRESENT</Text>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-                  {e.members_present.map((m: any) => (
-                    <View key={m.id} style={{ backgroundColor: T.bg, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
-                      <Text style={{ fontSize: 12, color: T.inkSoft }}>{m.name}</Text>
-                    </View>
-                  ))}
-                </View>
+                {e.members_present?.length > 0 ? (
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                    {e.members_present.map((m: any) => (
+                      <View key={m.id} style={{ backgroundColor: T.bg, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
+                        <Text style={{ fontSize: 12, color: T.inkSoft }}>{m.name}</Text>
+                      </View>
+                    ))}
+                  </View>
+                ) : (
+                  <Text style={{ color: T.inkSoft, fontSize: 13, lineHeight: 19 }}>{e.member_names}</Text>
+                )}
               </View>
             )}
           </View>
         ) : null}
 
-        <View style={{ flexDirection: 'row', gap: 8, marginTop: 14 }}>
-          <Button label={e.my_status === 'yes' ? "You're going ✓" : "I'll be there"} variant={e.my_status === 'yes' ? 'gold' : 'primary'} onPress={() => rsvp.mutate('yes')} loading={rsvp.isPending} />
-        </View>
-        <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
-          <Button label="Maybe" variant="outline" onPress={() => rsvp.mutate('maybe')} />
-          <Button label="Can't make it" variant="ghost" onPress={() => rsvp.mutate('no')} />
-        </View>
+        {isPast ? (
+          <View style={{ marginTop: 16, backgroundColor: T.surface, borderRadius: T.r.md, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Ionicons name="time-outline" size={16} color={T.inkMute} />
+            <Text style={{ color: T.inkMute, fontSize: 13 }}>This event has ended. RSVP is closed.</Text>
+          </View>
+        ) : (
+          <>
+            <View style={{ flexDirection: 'row', gap: 8, marginTop: 14 }}>
+              <Button label={e.my_status === 'yes' ? "You're going ✓" : "I'll be there"} variant={e.my_status === 'yes' ? 'gold' : 'primary'} onPress={() => rsvp.mutate('yes')} loading={rsvp.isPending} />
+            </View>
+            <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+              <Button label="Maybe" variant="outline" onPress={() => rsvp.mutate('maybe')} />
+              <Button label="Can't make it" variant="ghost" onPress={() => rsvp.mutate('no')} />
+            </View>
+          </>
+        )}
 
         <Text style={{ marginTop: 22, fontSize: 13, color: T.inkMute, fontWeight: '700', letterSpacing: 0.5 }}>GOING · {data.attendees.filter(a => a.status === 'yes').length}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10 }} contentContainerStyle={{ gap: 10 }}>

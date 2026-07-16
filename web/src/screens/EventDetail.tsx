@@ -37,6 +37,7 @@ export default function EventDetail() {
   if (!e) return <EmptyState icon="calendar" title="Event not found" />;
 
   const myStatus = status ?? e.my_status;
+  const isPast = e.starts_at ? new Date(e.starts_at).getTime() < Date.now() : false;
   const going = attendees.filter((a) => a.status === 'yes');
   const RsvpBtn = ({ s, label, tone }: { s: 'yes' | 'no' | 'maybe'; label: string; tone: 'green' | 'red' | 'gray' }) => (
     <button className={`btn ${myStatus === s ? (tone === 'green' ? 'primary' : tone === 'red' ? 'danger' : 'outline') : 'outline'}`}
@@ -70,7 +71,7 @@ export default function EventDetail() {
         </div>
       </div>
 
-      {(e.code_no || e.time_in || e.no_of_members || e.expenses != null || e.beneficiaries != null || (e.members_present?.length)) && (
+      {(e.code_no || e.time_in || e.no_of_members || e.expenses != null || e.beneficiaries != null || e.member_names || (e.members_present?.length)) && (
         <div className="card pad" style={{ marginBottom: 16 }}>
           <div className="card-title">Service Activity Report</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(120px,1fr))', gap: 12 }}>
@@ -83,25 +84,31 @@ export default function EventDetail() {
             {e.expenses != null && <ReportStat label="Expenses" value={`₹${Number(e.expenses).toLocaleString('en-IN')}`} />}
             {e.beneficiaries != null && <ReportStat label="Beneficiaries" value={e.beneficiaries} />}
           </div>
-          {e.members_present?.length > 0 && (
+          {(e.members_present?.length > 0 || e.member_names) && (
             <div style={{ marginTop: 12 }}>
               <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 700, marginBottom: 6 }}>Members present</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {e.members_present.map((m: any) => <span key={m.id} className="pill" style={{ background: 'var(--bg)' }}>{m.name}</span>)}
-              </div>
+              {e.members_present?.length > 0
+                ? <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{e.members_present.map((m: any) => <span key={m.id} className="pill" style={{ background: 'var(--bg)' }}>{m.name}</span>)}</div>
+                : <div style={{ color: 'var(--ink-2)' }}>{e.member_names}</div>}
             </div>
           )}
         </div>
       )}
 
-      <div className="card pad" style={{ marginBottom: 16 }}>
-        <div className="card-title">Are you going?</div>
-        <div className="btn-row">
-          <RsvpBtn s="yes" label="Yes, I'll be there" tone="green" />
-          <RsvpBtn s="maybe" label="Maybe" tone="gray" />
-          <RsvpBtn s="no" label="Can't make it" tone="red" />
+      {isPast ? (
+        <div className="card pad" style={{ marginBottom: 16 }}>
+          <div className="muted" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Icon name="calendar" size={16} /> This event has ended. RSVP is closed.</div>
         </div>
-      </div>
+      ) : (
+        <div className="card pad" style={{ marginBottom: 16 }}>
+          <div className="card-title">Are you going?</div>
+          <div className="btn-row">
+            <RsvpBtn s="yes" label="Yes, I'll be there" tone="green" />
+            <RsvpBtn s="maybe" label="Maybe" tone="gray" />
+            <RsvpBtn s="no" label="Can't make it" tone="red" />
+          </div>
+        </div>
+      )}
 
       <div className="card">
         <div className="page-head" style={{ padding: '18px 18px 0' }}>

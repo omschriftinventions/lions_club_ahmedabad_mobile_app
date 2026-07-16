@@ -167,6 +167,9 @@ router.delete('/:id', requireEditor, async (req: AuthedRequest, res) => {
 router.put('/:id/rsvp', async (req: AuthedRequest, res) => {
   const id = z.coerce.number().int().parse(req.params.id);
   const data = z.object({ status: z.enum(['yes','no','maybe']), guests: z.number().int().min(0).max(20).default(0), note: z.string().max(255).optional() }).parse(req.body);
+  const ev = (await query<RowDataPacket[]>(`SELECT starts_at FROM events WHERE id = :id AND club_id = :c`, { id, c: req.user!.clubId }))[0];
+  if (!ev) throw new HttpError(404, 'not_found');
+  if (new Date(ev.starts_at).getTime() < Date.now()) throw new HttpError(400, 'event_ended', 'RSVP is closed for past events');
   await exec(
     `INSERT INTO rsvps (event_id, member_id, status, guests, note)
      VALUES (:event_id, :me, :status, :guests, :note)
@@ -249,11 +252,14 @@ router.post('/import', requireEditor, async (req: AuthedRequest, res) => {
       const time_out = timeStr(pick(row, ['timeout','outtime']));
       const expenses = num(pick(row, ['expenses','expense','amount']));
       const beneficiaries = num(pick(row, ['beneficiaries','beneficiary','benef']));
-      const member_ids = resolveNames(pick(row, ['memberpresent','memberspresent','members','membername']));
-      const excelMembers = num(pick(row, ['noofmembers','numberofmembers','members']));
+      const memberNamesRaw = pick(row, ['memberpresent','memberspresent','membername']);
+      const member_names = memberNamesRaw ? String(memberNamesRaw).replace(/\s*[\n;]+\s*/g, ', ').trim() : null;
+      const member_ids = resolveNames(memberNamesRaw);
+      const excelMembers = num(pick(row, ['noofmembers','numberofmembers']));
 
+      const nameCount = member_names ? member_names.split(',').map(s => s.trim()).filter(Boolean).length : 0;
       const calc = computeReport({ member_ids, time_in, time_out });
-      const no_of_members = member_ids.length || excelMembers || null;
+      const no_of_members = member_ids.length || nameCount || excelMembers || null;
       // recompute man-hours if members came from the sheet (not from ids)
       const no_of_hours = calc.no_of_hours;
       const no_of_man_hours = (no_of_hours != null && no_of_members != null) ? Math.round(no_of_hours * no_of_members * 100) / 100 : null;
@@ -270,14 +276,14 @@ router.post('/import', requireEditor, async (req: AuthedRequest, res) => {
         existing = r[0];
       }
 
-      const fields = { title, type: 'Service', code_no, venue, time_in, time_out, member_ids: member_ids_json,
+      const fields = { title, type: 'Service', code_no, venue, time_in, time_out, member_ids: member_ids_json, member_names,
         no_of_members, no_of_hours, no_of_man_hours, expenses, beneficiaries,
         starts_at: starts_at ?? new Date().toISOString().slice(0, 19).replace('T', ' ') };
 
       if (existing) {
         await exec(
           `UPDATE events SET title=:title, code_no=:code_no, venue=:venue, starts_at=:starts_at,
-             time_in=:time_in, time_out=:time_out, member_ids=:member_ids, no_of_members=:no_of_members,
+             time_in=:time_in, time_out=:time_out, member_ids=:member_ids, member_names=:member_names, no_of_members=:no_of_members,
              no_of_hours=:no_of_hours, no_of_man_hours=:no_of_man_hours, expenses=:expenses, beneficiaries=:beneficiaries
            WHERE id=:id AND club_id=:c`,
           { ...fields, id: existing.id, c: req.user!.clubId }
@@ -285,9 +291,9 @@ router.post('/import', requireEditor, async (req: AuthedRequest, res) => {
         updated++;
       } else {
         await exec(
-          `INSERT INTO events (club_id, title, type, code_no, starts_at, venue, time_in, time_out, member_ids,
+          `INSERT INTO events (club_id, title, type, code_no, starts_at, venue, time_in, time_out, member_ids, member_names,
              no_of_members, no_of_hours, no_of_man_hours, expenses, beneficiaries, created_by)
-           VALUES (:c, :title, :type, :code_no, :starts_at, :venue, :time_in, :time_out, :member_ids,
+           VALUES (:c, :title, :type, :code_no, :starts_at, :venue, :time_in, :time_out, :member_ids, :member_names,
              :no_of_members, :no_of_hours, :no_of_man_hours, :expenses, :beneficiaries, :me)`,
           { ...fields, c: req.user!.clubId, me: req.user!.sub }
         );
