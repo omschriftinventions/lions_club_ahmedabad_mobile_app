@@ -17,15 +17,6 @@ interface Member {
   role: string; role_label: string; role_color: string;
 }
 
-const FILTERS = [
-  { code: 'all',         label: 'All' },
-  { code: 'PRESIDENT',   label: 'President' },
-  { code: 'SECRETARY',   label: 'Secretary' },
-  { code: 'TREASURER',   label: 'Treasurer' },
-  { code: 'PMJF',        label: 'PMJF' },
-  { code: 'MJF',         label: 'MJF' },
-];
-
 export default function FindMemberScreen() {
   const nav = useNavigation<any>();
   const [q, setQ] = useState('');
@@ -35,6 +26,13 @@ export default function FindMemberScreen() {
     queryKey: ['members', 'all'],
     queryFn: () => api.get<{ members: Member[] }>('/members?limit=500'),
   });
+  const { data: rolesData } = useQuery({ queryKey: ['roles'], queryFn: () => api.get<{ roles: any[] }>('/members/meta/roles') });
+  const FILTERS = useMemo(() => [
+    { code: 'all', label: 'All' },
+    ...(rolesData?.roles ?? []).map((r: any) => ({ code: r.code, label: r.label })),
+    { code: 'PMJF', label: 'PMJF' },
+    { code: 'MJF', label: 'MJF' },
+  ], [rolesData]);
 
   const results = useMemo(() => {
     let rows = data?.members ?? [];

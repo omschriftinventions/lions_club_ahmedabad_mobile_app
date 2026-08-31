@@ -7,12 +7,13 @@ import { Icon } from '../components/Icon';
 import { Spinner, EmptyState, Pill } from '../components/ui';
 import type { Member } from '../types';
 
-const ROLES = ['', 'president', 'secretary', 'treasurer', 'vp', 'member'];
-
 export default function Roster() {
   const nav = useNavigate();
   const [search, setSearch] = useState('');
   const [role, setRole] = useState('');
+
+  const { data: rolesData } = useQuery({ queryKey: ['roles'], queryFn: () => api.get<{ roles: any[] }>('/members/meta/roles') });
+  const roleChips = [{ code: '', label: 'All roles' }, ...(rolesData?.roles ?? [])];
 
   const { data, isLoading } = useQuery({
     queryKey: ['roster', search, role],
@@ -39,10 +40,10 @@ export default function Roster() {
                 value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
           </div>
-          <div className="chip-row" style={{ alignItems: 'center' }}>
-            {ROLES.map((r) => (
-              <button key={r || 'all'} className={`chip${role === r ? ' active' : ''}`} onClick={() => setRole(r)}>
-                {r ? r.charAt(0).toUpperCase() + r.slice(1) : 'All roles'}
+          <div className="chip-row" style={{ alignItems: 'center', flexWrap: 'wrap' }}>
+            {roleChips.map((r) => (
+              <button key={r.code || 'all'} className={`chip${role === r.code ? ' active' : ''}`} onClick={() => setRole(r.code)}>
+                {r.label}
               </button>
             ))}
           </div>

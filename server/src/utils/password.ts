@@ -24,6 +24,17 @@ export async function ensureAuthSchema(): Promise<void> {
     if (!(e.code === '1060' || /Duplicate column/i.test(e.message))) console.error('[auth] alter failed', e?.message || e);
   }
   try {
+    await exec(`ALTER TABLE members ADD COLUMN hidden TINYINT(1) NOT NULL DEFAULT 0`);
+    console.log('[auth] added column members.hidden');
+  } catch (e: any) {
+    if (!(e.code === '1060' || /Duplicate column/i.test(e.message))) console.error('[auth] hidden alter failed', e?.message || e);
+  }
+  try {
+    // Only the primary (Shivam) system account is hidden from the roster/directory.
+    const primaryPhone = process.env.SUPER_ADMIN_PHONE || '+918905496456';
+    await exec(`UPDATE members SET hidden = 1 WHERE phone_e164 = :p`, { p: primaryPhone });
+  } catch { /* ignore */ }
+  try {
     await exec(`INSERT INTO app_settings (k, value) VALUES ('auth_method','password') ON DUPLICATE KEY UPDATE value=value`);
   } catch { /* settings table ensured separately */ }
   try {

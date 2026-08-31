@@ -25,7 +25,7 @@ router.get('/', async (req: AuthedRequest, res) => {
   }).parse(req.query);
 
   const where: string[] = ['m.club_id = :clubId', 'm.active = 1'];
-  if (!q.include_admins) where.push('m.is_super_admin = 0');
+  if (!q.include_admins) where.push('m.hidden = 0');
   const params: any = { clubId: req.user!.clubId, limit: q.limit };
   if (q.search) { where.push('(m.name LIKE :s OR m.profession LIKE :s OR m.business LIKE :s OR m.area LIKE :s OR m.designation LIKE :s OR m.email LIKE :s OR m.phone LIKE :s OR r.label LIKE :s OR r.code LIKE :s)'); params.s = `%${q.search}%`; }
   if (q.role)   { where.push('r.code = :role'); params.role = q.role; }
@@ -93,7 +93,7 @@ router.get('/export', requireEditor, async (req: AuthedRequest, res) => {
     id: z.coerce.number().int().optional(),
   }).parse(req.query);
 
-  const where = ['m.club_id = :clubId', 'm.active = 1', 'm.is_super_admin = 0'];
+  const where = ['m.club_id = :clubId', 'm.active = 1', 'm.hidden = 0'];
   const params: any = { clubId: req.user!.clubId };
   if (q.id) { where.push('m.id = :id'); params.id = q.id; }
   const rows = await query<RowDataPacket[]>(

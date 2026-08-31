@@ -19,7 +19,7 @@ router.post('/', requireEditor, async (req: AuthedRequest, res) => {
   }).parse(req.body);
 
   const members = await query<(RowDataPacket & { id: number })[]>(
-    `SELECT id FROM members WHERE club_id = :clubId AND active = 1 AND is_super_admin = 0`,
+    `SELECT id FROM members WHERE club_id = :clubId AND active = 1 AND hidden = 0`,
     { clubId: req.user!.clubId }
   );
 
@@ -58,12 +58,12 @@ router.post('/whatsapp', requireEditor, async (req: AuthedRequest, res) => {
   if (memberIds && memberIds.length > 0) {
     const idList = memberIds.join(',');
     members = await query<(RowDataPacket & { id: number; name: string; phone_e164: string | null })[]>(
-      `SELECT id, name, phone_e164 FROM members WHERE club_id = :clubId AND active = 1 AND is_super_admin = 0 AND id IN (${idList})`,
+      `SELECT id, name, phone_e164 FROM members WHERE club_id = :clubId AND active = 1 AND hidden = 0 AND id IN (${idList})`,
       { clubId }
     );
   } else {
     members = await query<(RowDataPacket & { id: number; name: string; phone_e164: string | null })[]>(
-      `SELECT id, name, phone_e164 FROM members WHERE club_id = :clubId AND active = 1 AND is_super_admin = 0 AND phone_e164 IS NOT NULL`,
+      `SELECT id, name, phone_e164 FROM members WHERE club_id = :clubId AND active = 1 AND hidden = 0 AND phone_e164 IS NOT NULL`,
       { clubId }
     );
   }
