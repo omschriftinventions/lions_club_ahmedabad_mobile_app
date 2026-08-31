@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '../lib/api';
+import { api, downloadFile } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { Icon } from '../components/Icon';
 import { Avatar } from '../components/Avatar';
@@ -16,6 +16,16 @@ export default function ManageRoster() {
 
   const { data, isLoading } = useQuery({ queryKey: ['roster', 'all'], queryFn: () => api.get<{ members: any[] }>('/members?limit=500') });
   const deact = useMutation({ mutationFn: (id: number) => api.delete(`/members/${id}`), onSuccess: () => qc.invalidateQueries({ queryKey: ['roster'] }) });
+  const [exporting, setExporting] = useState<string>('');
+  const doExport = async (format: 'xlsx' | 'pdf', id?: number, name?: string) => {
+    const key = `${format}-${id ?? 'all'}`;
+    setExporting(key);
+    try {
+      const base = id ? (name || 'member').replace(/[^a-z0-9]+/gi, '_') : 'roster';
+      await downloadFile(`/members/export?format=${format}${id ? `&id=${id}` : ''}`, `${base}.${format}`);
+    } catch (e: any) { alert(e?.message || 'Export failed'); }
+    finally { setExporting(''); }
+  };
 
   if (!member?.canEdit) return <div className="card pad"><div className="empty"><div className="ic"><Icon name="users" size={38} /></div><div style={{ fontWeight: 700 }}>Officer access required</div></div></div>;
   const list = data?.members ?? [];
@@ -24,7 +34,11 @@ export default function ManageRoster() {
     <>
       <div className="page-head">
         <div><h1>Manage Roster</h1><div className="sub">{list.length} active member{list.length === 1 ? '' : 's'}</div></div>
-        <button className="btn primary" onClick={() => nav('/add-member')}><Icon name="plus" size={16} /> Add member</button>
+        <div className="btn-row">
+          <button className="btn outline" disabled={!!exporting} onClick={() => doExport('xlsx')}><Icon name="download" size={16} /> {exporting === 'xlsx-all' ? 'Exporting...' : 'Excel'}</button>
+          <button className="btn outline" disabled={!!exporting} onClick={() => doExport('pdf')}><Icon name="doc" size={16} /> {exporting === 'pdf-all' ? 'Exporting...' : 'PDF'}</button>
+          <button className="btn primary" onClick={() => nav('/add-member')}><Icon name="plus" size={16} /> Add member</button>
+        </div>
       </div>
       {isLoading ? <Spinner /> : list.length === 0 ? <EmptyState icon="users" title="No members" /> : (
         <div className="card">
@@ -38,6 +52,7 @@ export default function ManageRoster() {
                   <td className="muted">{m.phone || '\u2014'}</td>
                   <td>
                     <div className="btn-row" style={{ justifyContent: 'flex-end' }}>
+                      <button className="btn ghost sm" title="Export this member (PDF)" disabled={!!exporting} onClick={() => doExport('pdf', m.id, m.name)}><Icon name="download" size={15} /></button>
                       {member?.superAdmin && (
                         <button className="btn ghost sm" title="Manage member" onClick={() => setManageFor(m)}><Icon name="settings" size={15} /></button>
                       )}
@@ -55,9 +70,9 @@ export default function ManageRoster() {
   );
 }
 
-const ROLES = ['MEMBER', 'PRESIDENT', 'SECRETARY', 'TREASURER', 'VP1', 'VP2', 'MEMBERSHIP_CHAIR', 'SERVICE_CHAIR', 'TAIL_TWISTER'];
-
 const ManageMemberModal: React.FC<{ member: any; onClose: () => void }> = ({ member, onClose }) => {
+  const { data: rolesData } = useQuery({ queryKey: ['roles'], queryFn: () => api.get<{ roles: any[] }>('/members/meta/roles') });
+  const roles = rolesData?.roles ?? [];
   const [avatarUrl, setAvatarUrl] = useState(member.avatar_url || '');
   const [uploading, setUploading] = useState(false);
   const [pw, setPw] = useState('');
@@ -132,7 +147,7 @@ const ManageMemberModal: React.FC<{ member: any; onClose: () => void }> = ({ mem
       <div className="card-title">Member Details</div>
       <div className="row-2">
         <Field label="Name"><input className="input" value={f.name} onChange={set('name')} /></Field>
-        <Field label="Role"><select className="select" value={f.role} onChange={set('role')}>{ROLES.map((r) => <option key={r}>{r}</option>)}</select></Field>
+        <Field label="Position"><select className="select" value={f.role} onChange={set('role')}>{roles.map((r) => <option key={r.code} value={r.code}>{r.label}</option>)}</select></Field>
       </div>
       <div className="row-2">
         <Field label="Designation"><input className="input" value={f.designation} onChange={set('designation')} placeholder="PMJF / MJF" /></Field>

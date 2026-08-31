@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { Icon } from '../components/Icon';
 import { Field } from '../components/ui';
 
-const ROLES = ['MEMBER', 'PRESIDENT', 'SECRETARY', 'TREASURER', 'VP1', 'VP2', 'MEMBERSHIP_CHAIR', 'SERVICE_CHAIR', 'TAIL_TWISTER'];
-
 export default function AddMember() {
   const nav = useNavigate();
   const qc = useQueryClient();
   const { member } = useAuth();
+  const { data: rolesData } = useQuery({ queryKey: ['roles'], queryFn: () => api.get<{ roles: any[] }>('/members/meta/roles') });
+  const roles = rolesData?.roles ?? [];
   const [f, setF] = useState({ name: '', role: 'MEMBER', designation: '', profession: '', business: '', area: '', phone: '', email: '', joined_year: '', bio: '' });
   const set = (k: string) => (e: any) => setF({ ...f, [k]: e.target.value });
   const m = useMutation({
@@ -30,10 +30,11 @@ export default function AddMember() {
       <div className="page-head"><div><h1>Add Member</h1><div className="sub">Register a new Lion</div></div></div>
       <form className="card pad" style={{ maxWidth: 640 }} onSubmit={(e) => { e.preventDefault(); if (f.name) m.mutate(); }}>
         {I('name', 'Full name')}
-        <div className="row-2"><Field label="Role"><select className="select" value={f.role} onChange={set('role')}>{ROLES.map((r) => <option key={r}>{r}</option>)}</select></Field>{I('designation', 'Designation')}</div>
+        <div className="row-2"><Field label="Position"><select className="select" value={f.role} onChange={set('role')}>{roles.map((r) => <option key={r.code} value={r.code}>{r.label}</option>)}</select></Field>{I('designation', 'Designation')}</div>
         <div className="row-2">{I('profession', 'Profession')}{I('business', 'Business')}</div>
         <div className="row-2">{I('area', 'Area')}{I('joined_year', 'Joined year', { num: true })}</div>
         <div className="row-2">{I('phone', 'Phone')}{I('email', 'Email')}</div>
+        <div className="hint" style={{ marginTop: -6, marginBottom: 10 }}>Login password is set automatically to the member's phone number (last 10 digits).</div>
         {I('bio', 'Bio', { area: true })}
         {m.error && <div className="pill red" style={{ marginBottom: 12 }}>{(m.error as any).message}</div>}
         <button className="btn primary" disabled={m.isPending || !f.name}>{m.isPending ? 'Adding...' : 'Add member'}</button>

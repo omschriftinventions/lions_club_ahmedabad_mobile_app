@@ -9,6 +9,7 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { config } from '../config';
+import { hashPassword, phonePassword } from '../utils/password';
 
 const router = Router();
 router.use(requireAuth);
@@ -77,6 +78,78 @@ router.post('/me/avatar', async (req: AuthedRequest, res) => {
   res.json({ url });
 });
 
+// GET /members/meta/roles — all positions (for the role picker & assignment).
+router.get('/meta/roles', async (_req: AuthedRequest, res) => {
+  const rows = await query<RowDataPacket[]>(
+    `SELECT id, code, label, color, rank_order FROM roles ORDER BY rank_order, label`
+  );
+  res.json({ roles: rows });
+});
+
+// GET /members/export?format=xlsx|pdf&id=optional — roster export (admin only).
+router.get('/export', requireEditor, async (req: AuthedRequest, res) => {
+  const q = z.object({
+    format: z.enum(['xlsx', 'pdf']).default('xlsx'),
+    id: z.coerce.number().int().optional(),
+  }).parse(req.query);
+
+  const where = ['m.club_id = :clubId', 'm.active = 1', 'm.is_super_admin = 0'];
+  const params: any = { clubId: req.user!.clubId };
+  if (q.id) { where.push('m.id = :id'); params.id = q.id; }
+  const rows = await query<RowDataPacket[]>(
+    `SELECT m.name, r.label AS role_label, m.designation, m.profession, m.business, m.area,
+            m.phone, m.email, m.joined_year, m.dob, m.anniv, m.spouse
+     FROM members m JOIN roles r ON r.id = m.role_id
+     WHERE ${where.join(' AND ')} ORDER BY r.rank_order, m.name`,
+    params
+  );
+
+  const cols: [string, string][] = [
+    ['Name', 'name'], ['Position', 'role_label'], ['Designation', 'designation'],
+    ['Profession', 'profession'], ['Business', 'business'], ['Area', 'area'],
+    ['Phone', 'phone'], ['Email', 'email'], ['Joined', 'joined_year'],
+    ['Birthday', 'dob'], ['Anniversary', 'anniv'], ['Spouse', 'spouse'],
+  ];
+  const fnameBase = q.id ? (String(rows[0]?.name || 'member').replace(/[^a-z0-9]+/gi, '_')) : 'roster';
+
+  if (q.format === 'xlsx') {
+    const XLSX = require('xlsx');
+    const aoa = [cols.map(c => c[0]), ...rows.map(r => cols.map(c => (r as any)[c[1]] ?? ''))];
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws['!cols'] = cols.map(() => ({ wch: 18 }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Roster');
+    const buf: Buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${fnameBase}.xlsx"`);
+    return res.end(buf);
+  }
+
+  // PDF
+  const PDFDocument = require('pdfkit');
+  const doc = new PDFDocument({ size: 'A4', margin: 36 });
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="${fnameBase}.pdf"`);
+  doc.pipe(res);
+  doc.fontSize(16).fillColor('#003F87').text('Lions Club of Ahmedabad (Host) — Member Roster', { align: 'center' });
+  doc.moveDown(0.3).fontSize(9).fillColor('#666').text(`${rows.length} member(s) · generated ${new Date().toLocaleDateString('en-IN')}`, { align: 'center' });
+  doc.moveDown(0.8);
+  rows.forEach((r: any, i: number) => {
+    if (doc.y > 760) doc.addPage();
+    doc.fontSize(11).fillColor('#111').text(`${i + 1}. ${r.name}`, { continued: true }).fillColor('#8B1A3B').text(`   ${r.role_label || ''}`);
+    const line = (label: string, v: any) => (v ? `${label}: ${v}` : '');
+    const details = [
+      line('Phone', r.phone), line('Email', r.email), line('Designation', r.designation),
+      line('Profession', r.profession), line('Business', r.business), line('Area', r.area),
+      line('Joined', r.joined_year), line('Birthday', r.dob), line('Anniversary', r.anniv), line('Spouse', r.spouse),
+    ].filter(Boolean).join('  ·  ');
+    if (details) doc.fontSize(9).fillColor('#444').text(details);
+    doc.moveDown(0.5);
+  });
+  doc.end();
+  return;
+});
+
 router.get('/:id', async (req: AuthedRequest, res) => {
   const id = z.coerce.number().int().parse(req.params.id);
   const rows = await query<RowDataPacket[]>(
@@ -124,10 +197,13 @@ router.post('/', requireEditor, async (req: AuthedRequest, res) => {
   const role = await query<(RowDataPacket & { id: number })[]>(`SELECT id FROM roles WHERE code = :c`, { c: data.role });
   if (role.length === 0) throw new HttpError(400, 'invalid_role');
   const initials = data.name.split(/\s+/).filter(w => w !== 'Lion').map(w => w[0]).join('').slice(0, 4).toUpperCase();
+  // Auto-set login password to the member's phone number (last 10 digits).
+  const pw = phonePassword(data.phone_e164 || data.phone);
+  const password_hash = pw ? await hashPassword(pw) : null;
   const result = await exec(
-    `INSERT INTO members (club_id, role_id, name, initials, designation, profession, business, area, phone, phone_e164, email, joined_year, dob, anniv, spouse, avatar_color, bio)
-     VALUES (:clubId, :roleId, :name, :initials, :designation, :profession, :business, :area, :phone, :phone_e164, :email, :joined_year, :dob, :anniv, :spouse, :avatar_color, :bio)`,
-    { ...data, clubId: req.user!.clubId, roleId: role[0].id, initials }
+    `INSERT INTO members (club_id, role_id, name, initials, designation, profession, business, area, phone, phone_e164, email, joined_year, dob, anniv, spouse, avatar_color, bio, password_hash)
+     VALUES (:clubId, :roleId, :name, :initials, :designation, :profession, :business, :area, :phone, :phone_e164, :email, :joined_year, :dob, :anniv, :spouse, :avatar_color, :bio, :password_hash)`,
+    { ...data, clubId: req.user!.clubId, roleId: role[0].id, initials, password_hash }
   );
   res.status(201).json({ id: result.insertId });
 });

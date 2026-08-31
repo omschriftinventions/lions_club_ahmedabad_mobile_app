@@ -41,6 +41,7 @@ const Shell: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 const PasswordLogin: React.FC<{ onLogin: (phone: string, password: string) => Promise<void> }> = ({ onLogin }) => {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState('');
 
@@ -66,7 +67,13 @@ const PasswordLogin: React.FC<{ onLogin: (phone: string, password: string) => Pr
         </div>
         <div className="field">
           <label>Password</label>
-          <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Your password" />
+          <div style={{ position: 'relative' }}>
+            <input className="input" type={showPw ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Your password" style={{ paddingRight: 44 }} />
+            <button type="button" onClick={() => setShowPw((s) => !s)} title={showPw ? 'Hide password' : 'Show password'}
+              style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--faint)', padding: 6, display: 'inline-flex' }}>
+              <Icon name={showPw ? 'eye-off' : 'eye'} size={18} />
+            </button>
+          </div>
         </div>
         {err && <div className="pill red" style={{ marginBottom: 12 }}>{err}</div>}
         <button className="btn primary block" disabled={loading}>{loading ? 'Signing in...' : 'Sign in'}</button>

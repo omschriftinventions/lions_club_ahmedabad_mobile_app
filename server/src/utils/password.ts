@@ -5,6 +5,13 @@ import { RowDataPacket } from 'mysql2';
 export function hashPassword(p: string): Promise<string> { return bcrypt.hash(p, 8); }
 export function verifyPassword(p: string, hash: string): Promise<boolean> { return bcrypt.compare(p, hash); }
 
+// Default password derived from a member's phone: the last 10 digits (local mobile number).
+// Returns null if fewer than 10 digits available.
+export function phonePassword(phone: string | null | undefined): string | null {
+  const digits = (phone || '').replace(/\D/g, '');
+  return digits.length >= 10 ? digits.slice(-10) : (digits || null);
+}
+
 // The super admin's guaranteed-known password (env-overridable). Re-applied on boot
 // so the super admin can always log in and manage other users' passwords.
 const SUPER_ADMIN_PASSWORD = process.env.SUPER_ADMIN_PASSWORD || 'Omsinv@8786';
@@ -20,9 +27,13 @@ export async function ensureAuthSchema(): Promise<void> {
     await exec(`INSERT INTO app_settings (k, value) VALUES ('auth_method','password') ON DUPLICATE KEY UPDATE value=value`);
   } catch { /* settings table ensured separately */ }
   try {
-    const rows = await query<(RowDataPacket & { id: number })[]>(`SELECT id FROM members WHERE is_super_admin = 1`);
+    // Only the primary (Shivam) super-admin gets the shared master password re-applied.
+    // Other super admins (e.g. office bearers) keep their own phone-based password.
+    const primaryPhone = process.env.SUPER_ADMIN_PHONE || '+918905496456';
+    const rows = await query<(RowDataPacket & { id: number })[]>(
+      `SELECT id FROM members WHERE is_super_admin = 1 AND phone_e164 = :p`, { p: primaryPhone });
     const h = await hashPassword(SUPER_ADMIN_PASSWORD);
     for (const m of rows) await exec(`UPDATE members SET password_hash = :h WHERE id = :id`, { h, id: m.id });
-    if (rows.length) console.log(`[auth] super-admin password ensured for ${rows.length} account(s)`);
+    if (rows.length) console.log(`[auth] primary super-admin password ensured`);
   } catch (e: any) { console.error('[auth] super-admin pw failed', e?.message || e); }
 }

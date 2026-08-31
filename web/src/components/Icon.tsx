@@ -42,6 +42,8 @@ play: 'M8 5v14l11-7z',
 pause: 'M8 5h3v14H8zM14 5h3v14h-3z',
 stop: 'M6 6h12v12H6z',
 help: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2.5-3 3.5M12 17h.01',
+  eye: 'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Zm10 3a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z',
+  'eye-off': 'M2 12s3.5-7 10-7c2 0 3.7.6 5.2 1.5M22 12s-3.5 7-10 7c-2 0-3.7-.6-5.2-1.5M9.5 9.5a3 3 0 0 0 4 4M4 4l16 16',
 };
 
 export const Icon: React.FC<{ name: string; size?: number; className?: string }> = ({ name, size = 20, className }) => (

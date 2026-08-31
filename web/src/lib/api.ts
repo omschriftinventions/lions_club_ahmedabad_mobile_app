@@ -43,3 +43,16 @@ export const api = {
   patch:  <T>(p: string, b?: any)   => request<T>(p, { method: 'PATCH',  body: b ? JSON.stringify(b) : undefined }),
   delete: <T>(p: string)           => request<T>(p, { method: 'DELETE' }),
 };
+
+// Authenticated binary download → triggers a browser file save.
+export async function downloadFile(path: string, filename: string): Promise<void> {
+  const token = useAuth.getState().access;
+  const res = await fetch(`${API_BASE}${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+  if (!res.ok) throw new Error(`Download failed (${res.status})`);
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
