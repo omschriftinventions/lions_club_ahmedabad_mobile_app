@@ -10,6 +10,10 @@ import path from 'path';
 import crypto from 'crypto';
 import { config } from '../config';
 import { hashPassword, phonePassword } from '../utils/password';
+import { normalizePhoneIN } from '../utils/phone';
+
+// Canonicalise a phone to +91XXXXXXXXXX so login lookups match. Falls back to raw on invalid.
+const canonE164 = (v: any): any => { try { return normalizePhoneIN(String(v)); } catch { return v; } };
 
 const router = Router();
 router.use(requireAuth);
@@ -194,6 +198,7 @@ const upsertSchema = z.object({
 
 router.post('/', requireEditor, async (req: AuthedRequest, res) => {
   const data = upsertSchema.parse(req.body);
+  if (data.phone_e164) data.phone_e164 = canonE164(data.phone_e164);
   const role = await query<(RowDataPacket & { id: number })[]>(`SELECT id FROM roles WHERE code = :c`, { c: data.role });
   if (role.length === 0) throw new HttpError(400, 'invalid_role');
   const initials = data.name.split(/\s+/).filter(w => w !== 'Lion').map(w => w[0]).join('').slice(0, 4).toUpperCase();
@@ -222,7 +227,7 @@ router.patch('/:id', async (req: AuthedRequest, res) => {
     sets.push('role_id = :roleId'); params.roleId = role[0].id;
   }
   for (const k of ['name','designation','profession','business','area','phone','phone_e164','email','joined_year','dob','anniv','spouse','avatar_color','bio','expertise','goals','accomplishments','interests','network','social'] as const) {
-    if (k in data) { sets.push(`${k} = :${k}`); params[k] = (data as any)[k]; }
+    if (k in data) { sets.push(`${k} = :${k}`); params[k] = k === 'phone_e164' && (data as any)[k] ? canonE164((data as any)[k]) : (data as any)[k]; }
   }
   if (sets.length === 0) return res.json({ ok: true });
   await exec(`UPDATE members SET ${sets.join(', ')} WHERE id = :id AND club_id = :clubId`, params);
