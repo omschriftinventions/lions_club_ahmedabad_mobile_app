@@ -206,11 +206,17 @@ router.post('/', requireEditor, async (req: AuthedRequest, res) => {
   // Auto-set login password to the member's phone number (last 10 digits).
   const pw = phonePassword(data.phone_e164 || data.phone);
   const password_hash = pw ? await hashPassword(pw) : null;
-  const result = await exec(
-    `INSERT INTO members (club_id, role_id, name, initials, designation, profession, business, area, phone, phone_e164, email, joined_year, dob, anniv, spouse, sponsor, avatar_color, bio, password_hash)
-     VALUES (:clubId, :roleId, :name, :initials, :designation, :profession, :business, :area, :phone, :phone_e164, :email, :joined_year, :dob, :anniv, :spouse, :sponsor, :avatar_color, :bio, :password_hash)`,
-    { spouse: null, sponsor: null, dob: null, anniv: null, avatar_color: null, bio: null, ...data, clubId: req.user!.clubId, roleId: role[0].id, initials, password_hash }
-  );
+  let result;
+  try {
+    result = await exec(
+      `INSERT INTO members (club_id, role_id, name, initials, designation, profession, business, area, phone, phone_e164, email, joined_year, dob, anniv, spouse, sponsor, avatar_color, bio, password_hash)
+       VALUES (:clubId, :roleId, :name, :initials, :designation, :profession, :business, :area, :phone, :phone_e164, :email, :joined_year, :dob, :anniv, :spouse, :sponsor, :avatar_color, :bio, :password_hash)`,
+      { spouse: null, sponsor: null, dob: null, anniv: null, avatar_color: null, bio: null, ...data, clubId: req.user!.clubId, roleId: role[0].id, initials, password_hash }
+    );
+  } catch (e: any) {
+    if (e?.code === 'ER_DUP_ENTRY') throw new HttpError(409, 'A member with this phone number already exists.', 'phone_exists');
+    throw e;
+  }
   res.status(201).json({ id: result.insertId });
 });
 
@@ -231,7 +237,12 @@ router.patch('/:id', async (req: AuthedRequest, res) => {
     if (k in data) { sets.push(`${k} = :${k}`); params[k] = k === 'phone_e164' && (data as any)[k] ? canonE164((data as any)[k]) : (data as any)[k]; }
   }
   if (sets.length === 0) return res.json({ ok: true });
-  await exec(`UPDATE members SET ${sets.join(', ')} WHERE id = :id AND club_id = :clubId`, params);
+  try {
+    await exec(`UPDATE members SET ${sets.join(', ')} WHERE id = :id AND club_id = :clubId`, params);
+  } catch (e: any) {
+    if (e?.code === 'ER_DUP_ENTRY') throw new HttpError(409, 'A member with this phone number already exists.', 'phone_exists');
+    throw e;
+  }
   res.json({ ok: true });
 });
 
