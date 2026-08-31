@@ -62,6 +62,7 @@ export default function MemberDetailScreen() {
           <Row icon="gift" label="Birthday" value={m.dob} />
           <Row icon="heart" label="Anniversary" value={m.anniv} />
           <Row icon="people" label="Spouse" value={m.spouse} />
+          <Row icon="ribbon" label="Sponsor" value={m.sponsor} />
         </Card>
         {m.bio && <Card><Text style={{ color: T.inkSoft, lineHeight: 20 }}>{m.bio}</Text></Card>}
         {[m.expertise, m.goals, m.accomplishments, m.interests, m.network, m.social].some(egHas) ? (

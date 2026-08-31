@@ -20,6 +20,7 @@ export interface Member {
   dob?: string | null;
   anniv?: string | null;
   spouse?: string | null;
+  sponsor?: string | null;
   avatar_color?: string | null;
   avatar_url?: string | null;
   bio?: string | null;

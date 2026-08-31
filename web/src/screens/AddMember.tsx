@@ -12,10 +12,10 @@ export default function AddMember() {
   const { member } = useAuth();
   const { data: rolesData } = useQuery({ queryKey: ['roles'], queryFn: () => api.get<{ roles: any[] }>('/members/meta/roles') });
   const roles = rolesData?.roles ?? [];
-  const [f, setF] = useState({ name: '', role: 'MEMBER', designation: '', profession: '', business: '', area: '', phone: '', email: '', joined_year: '', bio: '' });
+  const [f, setF] = useState({ name: '', role: 'MEMBER', designation: '', profession: '', business: '', area: '', phone: '', email: '', joined_year: '', sponsor: '', bio: '' });
   const set = (k: string) => (e: any) => setF({ ...f, [k]: e.target.value });
   const m = useMutation({
-    mutationFn: () => api.post('/members', { name: f.name, role: f.role, designation: f.designation || null, profession: f.profession || null, business: f.business || null, area: f.area || null, phone: f.phone || null, phone_e164: f.phone || null, email: f.email || null, joined_year: f.joined_year ? Number(f.joined_year) : null, bio: f.bio || null }),
+    mutationFn: () => api.post('/members', { name: f.name, role: f.role, designation: f.designation || null, profession: f.profession || null, business: f.business || null, area: f.area || null, phone: f.phone || null, phone_e164: f.phone || null, email: f.email || null, joined_year: f.joined_year ? Number(f.joined_year) : null, sponsor: f.sponsor || null, bio: f.bio || null }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['roster'] }); qc.invalidateQueries({ queryKey: ['roster', 'all'] }); nav('/roster'); },
   });
 
@@ -34,6 +34,7 @@ export default function AddMember() {
         <div className="row-2">{I('profession', 'Profession')}{I('business', 'Business')}</div>
         <div className="row-2">{I('area', 'Area')}{I('joined_year', 'Joined year', { num: true })}</div>
         <div className="row-2">{I('phone', 'Phone')}{I('email', 'Email')}</div>
+        {I('sponsor', 'Sponsor name')}
         <div className="hint" style={{ marginTop: -6, marginBottom: 10 }}>Login password is set automatically to the member's phone number (last 10 digits).</div>
         {I('bio', 'Bio', { area: true })}
         {m.error && <div className="pill red" style={{ marginBottom: 12 }}>{(m.error as any).message}</div>}

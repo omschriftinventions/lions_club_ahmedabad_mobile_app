@@ -31,13 +31,13 @@ export default function AddMemberScreen() {
 
   const [form, setForm] = useState<Record<string, string>>({
     name: '', role: 'MEMBER', designation: '', profession: '', business: '',
-    area: '', phone: '', email: '', joined_year: '',
+    area: '', phone: '', email: '', joined_year: '', sponsor: '',
   });
 
   const create = useMutation({
     mutationFn: () => {
       const body: any = { name: form.name, role: form.role };
-      for (const k of ['designation','profession','business','area','phone','email'] as const) {
+      for (const k of ['designation','profession','business','area','phone','email','sponsor'] as const) {
         if (form[k]?.trim()) body[k] = form[k].trim();
       }
       if (form.joined_year && /^\d{4}$/.test(form.joined_year)) body.joined_year = Number(form.joined_year);
@@ -67,6 +67,7 @@ export default function AddMemberScreen() {
           <Field label="Area"       value={form.area}       onChange={(v: string) => setForm(s => ({ ...s, area: v }))} />
           <Field label="Phone"      value={form.phone}      onChange={(v: string) => setForm(s => ({ ...s, phone: v }))} hint="+91 98250 12345" keyboard="phone-pad" />
           <Field label="Email"      value={form.email}      onChange={(v: string) => setForm(s => ({ ...s, email: v }))} keyboard="email-address" />
+          <Field label="Sponsor name" value={form.sponsor} onChange={(v: string) => setForm(s => ({ ...s, sponsor: v }))} hint="Sponsoring Lion" />
           <Field label="Joined year" value={form.joined_year} onChange={(v: string) => setForm(s => ({ ...s, joined_year: v }))} keyboard="number-pad" />
           <Text style={{ color: T.inkFaint, fontSize: 12, marginTop: 2 }}>Login password is set automatically to the member's phone number (last 10 digits).</Text>
         </Card>

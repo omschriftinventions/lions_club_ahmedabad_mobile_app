@@ -102,7 +102,7 @@ router.get('/export', requireEditor, async (req: AuthedRequest, res) => {
   if (q.id) { where.push('m.id = :id'); params.id = q.id; }
   const rows = await query<RowDataPacket[]>(
     `SELECT m.name, r.label AS role_label, m.designation, m.profession, m.business, m.area,
-            m.phone, m.email, m.joined_year, m.dob, m.anniv, m.spouse
+            m.phone, m.email, m.joined_year, m.dob, m.anniv, m.spouse, m.sponsor
      FROM members m JOIN roles r ON r.id = m.role_id
      WHERE ${where.join(' AND ')} ORDER BY r.rank_order, m.name`,
     params
@@ -112,7 +112,7 @@ router.get('/export', requireEditor, async (req: AuthedRequest, res) => {
     ['Name', 'name'], ['Position', 'role_label'], ['Designation', 'designation'],
     ['Profession', 'profession'], ['Business', 'business'], ['Area', 'area'],
     ['Phone', 'phone'], ['Email', 'email'], ['Joined', 'joined_year'],
-    ['Birthday', 'dob'], ['Anniversary', 'anniv'], ['Spouse', 'spouse'],
+    ['Birthday', 'dob'], ['Anniversary', 'anniv'], ['Spouse', 'spouse'], ['Sponsor', 'sponsor'],
   ];
   const fnameBase = q.id ? (String(rows[0]?.name || 'member').replace(/[^a-z0-9]+/gi, '_')) : 'roster';
 
@@ -145,7 +145,7 @@ router.get('/export', requireEditor, async (req: AuthedRequest, res) => {
     const details = [
       line('Phone', r.phone), line('Email', r.email), line('Designation', r.designation),
       line('Profession', r.profession), line('Business', r.business), line('Area', r.area),
-      line('Joined', r.joined_year), line('Birthday', r.dob), line('Anniversary', r.anniv), line('Spouse', r.spouse),
+      line('Joined', r.joined_year), line('Birthday', r.dob), line('Anniversary', r.anniv), line('Spouse', r.spouse), line('Sponsor', r.sponsor),
     ].filter(Boolean).join('  ·  ');
     if (details) doc.fontSize(9).fillColor('#444').text(details);
     doc.moveDown(0.5);
@@ -158,7 +158,7 @@ router.get('/:id', async (req: AuthedRequest, res) => {
   const id = z.coerce.number().int().parse(req.params.id);
   const rows = await query<RowDataPacket[]>(
     `SELECT m.id, m.name, m.initials, m.designation, m.profession, m.business, m.area,
-            m.phone, m.email, m.joined_year, m.dob, m.anniv, m.spouse, m.avatar_color, m.avatar_url, m.bio, m.expertise, m.goals, m.accomplishments, m.interests, m.network, m.social,
+            m.phone, m.email, m.joined_year, m.dob, m.anniv, m.spouse, m.sponsor, m.avatar_color, m.avatar_url, m.bio, m.expertise, m.goals, m.accomplishments, m.interests, m.network, m.social,
             r.code AS role, r.label AS role_label, r.color AS role_color
      FROM members m JOIN roles r ON r.id = m.role_id
      WHERE m.id = :id AND m.club_id = :clubId AND m.active = 1`,
@@ -186,6 +186,7 @@ const upsertSchema = z.object({
   dob: blank(z.string().max(20).nullable()).optional(),
   anniv: blank(z.string().max(20).nullable()).optional(),
   spouse: blank(z.string().max(120).nullable()).optional(),
+  sponsor: blank(z.string().max(160).nullable()).optional(),
   avatar_color: blank(z.string().regex(/^#[0-9A-Fa-f]{6}$/).nullable()).optional(),
   bio: blank(z.string().max(5000).nullable()).optional(),
   expertise: blank(z.string().max(2000).nullable()).optional(),
@@ -206,9 +207,9 @@ router.post('/', requireEditor, async (req: AuthedRequest, res) => {
   const pw = phonePassword(data.phone_e164 || data.phone);
   const password_hash = pw ? await hashPassword(pw) : null;
   const result = await exec(
-    `INSERT INTO members (club_id, role_id, name, initials, designation, profession, business, area, phone, phone_e164, email, joined_year, dob, anniv, spouse, avatar_color, bio, password_hash)
-     VALUES (:clubId, :roleId, :name, :initials, :designation, :profession, :business, :area, :phone, :phone_e164, :email, :joined_year, :dob, :anniv, :spouse, :avatar_color, :bio, :password_hash)`,
-    { ...data, clubId: req.user!.clubId, roleId: role[0].id, initials, password_hash }
+    `INSERT INTO members (club_id, role_id, name, initials, designation, profession, business, area, phone, phone_e164, email, joined_year, dob, anniv, spouse, sponsor, avatar_color, bio, password_hash)
+     VALUES (:clubId, :roleId, :name, :initials, :designation, :profession, :business, :area, :phone, :phone_e164, :email, :joined_year, :dob, :anniv, :spouse, :sponsor, :avatar_color, :bio, :password_hash)`,
+    { spouse: null, sponsor: null, dob: null, anniv: null, avatar_color: null, bio: null, ...data, clubId: req.user!.clubId, roleId: role[0].id, initials, password_hash }
   );
   res.status(201).json({ id: result.insertId });
 });
@@ -226,7 +227,7 @@ router.patch('/:id', async (req: AuthedRequest, res) => {
     if (role.length === 0) throw new HttpError(400, 'invalid_role');
     sets.push('role_id = :roleId'); params.roleId = role[0].id;
   }
-  for (const k of ['name','designation','profession','business','area','phone','phone_e164','email','joined_year','dob','anniv','spouse','avatar_color','bio','expertise','goals','accomplishments','interests','network','social'] as const) {
+  for (const k of ['name','designation','profession','business','area','phone','phone_e164','email','joined_year','dob','anniv','spouse','sponsor','avatar_color','bio','expertise','goals','accomplishments','interests','network','social'] as const) {
     if (k in data) { sets.push(`${k} = :${k}`); params[k] = k === 'phone_e164' && (data as any)[k] ? canonE164((data as any)[k]) : (data as any)[k]; }
   }
   if (sets.length === 0) return res.json({ ok: true });

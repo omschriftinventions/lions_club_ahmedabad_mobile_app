@@ -82,7 +82,7 @@ const ManageMemberModal: React.FC<{ member: any; onClose: () => void }> = ({ mem
     business: member.business ?? '', area: member.area ?? '',
     phone: member.phone ?? '', email: member.email ?? '',
     joined_year: member.joined_year ? String(member.joined_year) : '',
-    dob: member.dob ?? '', anniv: member.anniv ?? '', spouse: member.spouse ?? '',
+    dob: member.dob ?? '', anniv: member.anniv ?? '', spouse: member.spouse ?? '', sponsor: member.sponsor ?? '',
     bio: member.bio ?? '', expertise: member.expertise ?? '', goals: member.goals ?? '',
     accomplishments: member.accomplishments ?? '', interests: member.interests ?? '',
     network: member.network ?? '', social: member.social ?? '',
@@ -96,7 +96,7 @@ const ManageMemberModal: React.FC<{ member: any; onClose: () => void }> = ({ mem
       business: f.business || null, area: f.area || null,
       phone: f.phone || null, phone_e164: f.phone || null, email: f.email || null,
       joined_year: f.joined_year && /^\d{4}$/.test(f.joined_year) ? Number(f.joined_year) : null,
-      dob: f.dob || null, anniv: f.anniv || null, spouse: f.spouse || null,
+      dob: f.dob || null, anniv: f.anniv || null, spouse: f.spouse || null, sponsor: f.sponsor || null,
       bio: f.bio || null, expertise: f.expertise || null, goals: f.goals || null,
       accomplishments: f.accomplishments || null, interests: f.interests || null,
       network: f.network || null, social: f.social || null,
@@ -169,6 +169,7 @@ const ManageMemberModal: React.FC<{ member: any; onClose: () => void }> = ({ mem
         <Field label="Birthday"><input className="input" value={f.dob} onChange={set('dob')} placeholder="Mar 14" /></Field>
         <Field label="Anniversary"><input className="input" value={f.anniv} onChange={set('anniv')} placeholder="Nov 22" /></Field>
       </div>
+      <Field label="Sponsor name"><input className="input" value={f.sponsor} onChange={set('sponsor')} placeholder="Sponsoring Lion" /></Field>
       <Field label="Bio"><textarea className="textarea" value={f.bio} onChange={set('bio')} rows={2} /></Field>
 
       <div className="card-title" style={{ marginTop: 12 }}>Networking (E-GAINS)</div>
