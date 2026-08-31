@@ -7,12 +7,14 @@ import { Icon } from '../components/Icon';
 import { Avatar } from '../components/Avatar';
 import { Spinner, EmptyState, Pill, Modal, Field } from '../components/ui';
 import { RichEditor } from '../components/RichEditor';
+import { MemberSelect } from '../components/MemberSelect';
 
 export default function ManageRoster() {
   const nav = useNavigate();
   const qc = useQueryClient();
   const { member } = useAuth();
   const [manageFor, setManageFor] = useState<any | null>(null);
+  const [showSponsors, setShowSponsors] = useState(false);
 
   const { data, isLoading } = useQuery({ queryKey: ['roster', 'all'], queryFn: () => api.get<{ members: any[] }>('/members?limit=500') });
   const deact = useMutation({ mutationFn: (id: number) => api.delete(`/members/${id}`), onSuccess: () => qc.invalidateQueries({ queryKey: ['roster'] }) });
@@ -35,6 +37,7 @@ export default function ManageRoster() {
       <div className="page-head">
         <div><h1>Manage Roster</h1><div className="sub">{list.length} active member{list.length === 1 ? '' : 's'}</div></div>
         <div className="btn-row">
+          <button className="btn outline" onClick={() => setShowSponsors(true)}><Icon name="ribbon" size={16} /> Sponsors</button>
           <button className="btn outline" disabled={!!exporting} onClick={() => doExport('xlsx')}><Icon name="download" size={16} /> {exporting === 'xlsx-all' ? 'Exporting...' : 'Excel'}</button>
           <button className="btn outline" disabled={!!exporting} onClick={() => doExport('pdf')}><Icon name="doc" size={16} /> {exporting === 'pdf-all' ? 'Exporting...' : 'PDF'}</button>
           <button className="btn primary" onClick={() => nav('/add-member')}><Icon name="plus" size={16} /> Add member</button>
@@ -66,9 +69,29 @@ export default function ManageRoster() {
         </div>
       )}
       {manageFor && <ManageMemberModal member={manageFor} onClose={() => { setManageFor(null); qc.invalidateQueries({ queryKey: ['roster'] }); }} />}
+      {showSponsors && <SponsorReportModal onClose={() => setShowSponsors(false)} />}
     </>
   );
 }
+
+const SponsorReportModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+  const { data, isLoading } = useQuery({ queryKey: ['sponsor-report'], queryFn: () => api.get<{ sponsors: any[] }>('/members/sponsors/report') });
+  const rows = data?.sponsors ?? [];
+  return (
+    <Modal title="Sponsors — members sponsored" onClose={onClose} footer={<button className="btn ghost" onClick={onClose}>Close</button>}>
+      {isLoading ? <Spinner /> : rows.length === 0 ? (
+        <div className="muted" style={{ padding: 8 }}>No sponsor data yet. Set a sponsor on members to build this report.</div>
+      ) : (
+        <table className="table">
+          <thead><tr><th>Sponsor</th><th style={{ textAlign: 'right' }}>Members sponsored</th></tr></thead>
+          <tbody>{rows.map((s) => (
+            <tr key={s.sponsor_id}><td style={{ fontWeight: 600 }}>{s.sponsor_name}</td><td style={{ textAlign: 'right' }}><Pill tone="blue">{s.count}</Pill></td></tr>
+          ))}</tbody>
+        </table>
+      )}
+    </Modal>
+  );
+};
 
 const ManageMemberModal: React.FC<{ member: any; onClose: () => void }> = ({ member, onClose }) => {
   const { data: rolesData } = useQuery({ queryKey: ['roles'], queryFn: () => api.get<{ roles: any[] }>('/members/meta/roles') });
@@ -76,13 +99,14 @@ const ManageMemberModal: React.FC<{ member: any; onClose: () => void }> = ({ mem
   const [avatarUrl, setAvatarUrl] = useState(member.avatar_url || '');
   const [uploading, setUploading] = useState(false);
   const [pw, setPw] = useState('');
+  const [sponsorId, setSponsorId] = useState<number | null>(member.sponsor_id ?? null);
   const [f, setF] = useState({
     name: member.name ?? '', role: member.role ?? 'MEMBER',
     designation: member.designation ?? '', profession: member.profession ?? '',
     business: member.business ?? '', area: member.area ?? '',
     phone: member.phone ?? '', email: member.email ?? '',
     joined_year: member.joined_year ? String(member.joined_year) : '',
-    dob: member.dob ?? '', anniv: member.anniv ?? '', spouse: member.spouse ?? '', sponsor: member.sponsor ?? '',
+    dob: member.dob ?? '', anniv: member.anniv ?? '', spouse: member.spouse ?? '',
     bio: member.bio ?? '', expertise: member.expertise ?? '', goals: member.goals ?? '',
     accomplishments: member.accomplishments ?? '', interests: member.interests ?? '',
     network: member.network ?? '', social: member.social ?? '',
@@ -96,7 +120,7 @@ const ManageMemberModal: React.FC<{ member: any; onClose: () => void }> = ({ mem
       business: f.business || null, area: f.area || null,
       phone: f.phone || null, phone_e164: f.phone || null, email: f.email || null,
       joined_year: f.joined_year && /^\d{4}$/.test(f.joined_year) ? Number(f.joined_year) : null,
-      dob: f.dob || null, anniv: f.anniv || null, spouse: f.spouse || null, sponsor: f.sponsor || null,
+      dob: f.dob || null, anniv: f.anniv || null, spouse: f.spouse || null, sponsor_id: sponsorId,
       bio: f.bio || null, expertise: f.expertise || null, goals: f.goals || null,
       accomplishments: f.accomplishments || null, interests: f.interests || null,
       network: f.network || null, social: f.social || null,
@@ -169,7 +193,7 @@ const ManageMemberModal: React.FC<{ member: any; onClose: () => void }> = ({ mem
         <Field label="Birthday"><input className="input" value={f.dob} onChange={set('dob')} placeholder="Mar 14" /></Field>
         <Field label="Anniversary"><input className="input" value={f.anniv} onChange={set('anniv')} placeholder="Nov 22" /></Field>
       </div>
-      <Field label="Sponsor name"><input className="input" value={f.sponsor} onChange={set('sponsor')} placeholder="Sponsoring Lion" /></Field>
+      <Field label="Sponsor (member)"><MemberSelect value={sponsorId} onChange={setSponsorId} excludeId={member.id} placeholder="Search sponsoring member…" /></Field>
       <Field label="Bio"><textarea className="textarea" value={f.bio} onChange={set('bio')} rows={2} /></Field>
 
       <div className="card-title" style={{ marginTop: 12 }}>Networking (E-GAINS)</div>

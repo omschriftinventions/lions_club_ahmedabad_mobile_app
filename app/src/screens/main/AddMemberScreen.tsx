@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, ScrollView, Pressable, Alert } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, Text, TextInput, ScrollView, Pressable, Alert, Modal, FlatList } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -31,16 +31,18 @@ export default function AddMemberScreen() {
 
   const [form, setForm] = useState<Record<string, string>>({
     name: '', role: 'MEMBER', designation: '', profession: '', business: '',
-    area: '', phone: '', email: '', joined_year: '', sponsor: '',
+    area: '', phone: '', email: '', joined_year: '',
   });
+  const [sponsor, setSponsor] = useState<{ id: number; name: string } | null>(null);
 
   const create = useMutation({
     mutationFn: () => {
       const body: any = { name: form.name, role: form.role };
-      for (const k of ['designation','profession','business','area','phone','email','sponsor'] as const) {
+      for (const k of ['designation','profession','business','area','phone','email'] as const) {
         if (form[k]?.trim()) body[k] = form[k].trim();
       }
       if (form.joined_year && /^\d{4}$/.test(form.joined_year)) body.joined_year = Number(form.joined_year);
+      if (sponsor) body.sponsor_id = sponsor.id;
       return api.post<{ id: number }>('/members', body);
     },
     onSuccess: () => {
@@ -67,7 +69,7 @@ export default function AddMemberScreen() {
           <Field label="Area"       value={form.area}       onChange={(v: string) => setForm(s => ({ ...s, area: v }))} />
           <Field label="Phone"      value={form.phone}      onChange={(v: string) => setForm(s => ({ ...s, phone: v }))} hint="+91 98250 12345" keyboard="phone-pad" />
           <Field label="Email"      value={form.email}      onChange={(v: string) => setForm(s => ({ ...s, email: v }))} keyboard="email-address" />
-          <Field label="Sponsor name" value={form.sponsor} onChange={(v: string) => setForm(s => ({ ...s, sponsor: v }))} hint="Sponsoring Lion" />
+          <SponsorPicker value={sponsor} onChange={setSponsor} />
           <Field label="Joined year" value={form.joined_year} onChange={(v: string) => setForm(s => ({ ...s, joined_year: v }))} keyboard="number-pad" />
           <Text style={{ color: T.inkFaint, fontSize: 12, marginTop: 2 }}>Login password is set automatically to the member's phone number (last 10 digits).</Text>
         </Card>
@@ -93,6 +95,46 @@ const RolePicker = ({ roles, value, onChange }: { roles: Role[]; value: string; 
     </View>
   </View>
 );
+
+const SponsorPicker = ({ value, onChange }: { value: { id: number; name: string } | null; onChange: (v: { id: number; name: string } | null) => void }) => {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState('');
+  const { data } = useQuery({ queryKey: ['roster', 'all'], queryFn: () => api.get<{ members: any[] }>('/members?limit=500') });
+  const members = data?.members ?? [];
+  const filtered = useMemo(() => members.filter((m) => m.name.toLowerCase().includes(q.toLowerCase())).slice(0, 40), [members, q]);
+  return (
+    <View style={{ marginBottom: 12 }}>
+      <Text style={{ color: T.inkMute, fontSize: 11, letterSpacing: 0.5, marginBottom: 4 }}>SPONSOR (MEMBER)</Text>
+      <Pressable onPress={() => setOpen(true)} style={{ borderWidth: 1, borderColor: T.line, borderRadius: T.r.sm, paddingHorizontal: 12, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Text style={{ color: value ? T.ink : T.inkFaint, fontSize: 15 }}>{value ? value.name : 'Search & select sponsor…'}</Text>
+        {value ? <Pressable onPress={() => onChange(null)}><Ionicons name="close-circle" size={20} color={T.inkFaint} /></Pressable> : <Ionicons name="chevron-down" size={18} color={T.inkFaint} />}
+      </Pressable>
+      <Modal visible={open} animationType="slide" onRequestClose={() => setOpen(false)}>
+        <Screen bg={T.bg} scroll={false}>
+          <View style={{ flexDirection: 'row', padding: 16, alignItems: 'center', gap: 12 }}>
+            <Pressable onPress={() => setOpen(false)}><Ionicons name="close" size={26} color={T.ink} /></Pressable>
+            <Text style={{ flex: 1, fontSize: 17, fontWeight: '700', color: T.ink }}>Select sponsor</Text>
+          </View>
+          <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
+            <TextInput value={q} onChangeText={setQ} placeholder="Search name…" placeholderTextColor={T.inkFaint}
+              style={{ borderWidth: 1, borderColor: T.line, borderRadius: T.r.sm, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, color: T.ink }} />
+          </View>
+          <FlatList
+            data={filtered}
+            keyExtractor={(m) => String(m.id)}
+            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40 }}
+            renderItem={({ item }) => (
+              <Pressable onPress={() => { onChange({ id: item.id, name: item.name }); setOpen(false); setQ(''); }} style={{ paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: T.line }}>
+                <Text style={{ color: T.ink, fontSize: 15 }}>{item.name}</Text>
+                {item.role_label ? <Text style={{ color: T.inkMute, fontSize: 12 }}>{item.role_label}</Text> : null}
+              </Pressable>
+            )}
+          />
+        </Screen>
+      </Modal>
+    </View>
+  );
+};
 
 const Field = ({ label, value, onChange, hint, keyboard }: any) => (
   <View style={{ marginBottom: 12 }}>

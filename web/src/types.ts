@@ -21,6 +21,8 @@ export interface Member {
   anniv?: string | null;
   spouse?: string | null;
   sponsor?: string | null;
+  sponsor_id?: number | null;
+  sponsor_name?: string | null;
   avatar_color?: string | null;
   avatar_url?: string | null;
   bio?: string | null;

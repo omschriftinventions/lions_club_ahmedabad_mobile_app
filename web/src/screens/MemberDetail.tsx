@@ -62,7 +62,7 @@ export default function MemberDetail() {
           <Row icon="heart" label="Birthday" value={m.dob} />
           <Row icon="heart" label="Anniversary" value={m.anniv} />
           <Row icon="users" label="Spouse" value={m.spouse} />
-          <Row icon="ribbon" label="Sponsor" value={m.sponsor} />
+          <Row icon="ribbon" label="Sponsor" value={m.sponsor_name || m.sponsor} />
         </div>
       </div>
       <Egains m={m} />
