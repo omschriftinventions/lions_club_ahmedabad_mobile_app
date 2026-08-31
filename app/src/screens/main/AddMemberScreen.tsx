@@ -26,6 +26,9 @@ export default function AddMemberScreen() {
     );
   }
 
+  const { data: rolesData } = useQuery({ queryKey: ['roles'], queryFn: () => api.get<{ roles: Role[] }>('/members/meta/roles') });
+  const roles = rolesData?.roles ?? [];
+
   const [form, setForm] = useState<Record<string, string>>({
     name: '', role: 'MEMBER', designation: '', profession: '', business: '',
     area: '', phone: '', email: '', joined_year: '',
@@ -57,7 +60,7 @@ export default function AddMemberScreen() {
       <ScrollView style={{ paddingHorizontal: 16 }}>
         <Card>
           <Field label="Name *"   value={form.name}   onChange={(v: string) => setForm(s => ({ ...s, name: v }))} hint="Lion Full Name" />
-          <RolePicker value={form.role} onChange={(v: string) => setForm(s => ({ ...s, role: v }))} />
+          <RolePicker roles={roles} value={form.role} onChange={(v: string) => setForm(s => ({ ...s, role: v }))} />
           <Field label="Designation" value={form.designation} onChange={(v: string) => setForm(s => ({ ...s, designation: v }))} hint="PMJF / MJF / JF" />
           <Field label="Profession" value={form.profession} onChange={(v: string) => setForm(s => ({ ...s, profession: v }))} />
           <Field label="Business"   value={form.business}   onChange={(v: string) => setForm(s => ({ ...s, business: v }))} />
@@ -65,6 +68,7 @@ export default function AddMemberScreen() {
           <Field label="Phone"      value={form.phone}      onChange={(v: string) => setForm(s => ({ ...s, phone: v }))} hint="+91 98250 12345" keyboard="phone-pad" />
           <Field label="Email"      value={form.email}      onChange={(v: string) => setForm(s => ({ ...s, email: v }))} keyboard="email-address" />
           <Field label="Joined year" value={form.joined_year} onChange={(v: string) => setForm(s => ({ ...s, joined_year: v }))} keyboard="number-pad" />
+          <Text style={{ color: T.inkFaint, fontSize: 12, marginTop: 2 }}>Login password is set automatically to the member's phone number (last 10 digits).</Text>
         </Card>
         <Button label="Add Lion" variant="gold" onPress={() => create.mutate()} loading={create.isPending} style={{ marginTop: 16, marginBottom: 32 }} />
       </ScrollView>
@@ -72,23 +76,11 @@ export default function AddMemberScreen() {
   );
 }
 
-const ROLES = [
-  { code: 'PRESIDENT',        label: 'President' },
-  { code: 'SECRETARY',        label: 'Secretary' },
-  { code: 'TREASURER',        label: 'Treasurer' },
-  { code: 'VP1',              label: '1st VP' },
-  { code: 'VP2',              label: '2nd VP' },
-  { code: 'MEMBERSHIP_CHAIR', label: 'Membership' },
-  { code: 'SERVICE_CHAIR',    label: 'Service' },
-  { code: 'TAIL_TWISTER',     label: 'Tail Twister' },
-  { code: 'MEMBER',           label: 'Member' },
-];
-
-const RolePicker = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
+const RolePicker = ({ roles, value, onChange }: { roles: Role[]; value: string; onChange: (v: string) => void }) => (
   <View style={{ marginBottom: 14 }}>
-    <Text style={{ color: T.inkMute, fontSize: 11, letterSpacing: 0.5, marginBottom: 6 }}>ROLE</Text>
+    <Text style={{ color: T.inkMute, fontSize: 11, letterSpacing: 0.5, marginBottom: 6 }}>POSITION</Text>
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-      {ROLES.map(r => (
+      {roles.map(r => (
         <Pressable key={r.code} onPress={() => onChange(r.code)} style={{
           paddingHorizontal: 12, paddingVertical: 7, borderRadius: T.r.pill,
           borderWidth: 1, borderColor: value === r.code ? T.brandBlue : T.line,

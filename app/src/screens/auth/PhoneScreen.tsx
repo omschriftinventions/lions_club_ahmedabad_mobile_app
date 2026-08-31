@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, KeyboardAvoidingView, Platform, Image, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, KeyboardAvoidingView, Platform, Image, Alert, ActivityIndicator, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -19,6 +20,7 @@ export default function PhoneScreen() {
   const [method, setMethod] = useState<Method>(null);
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -72,8 +74,11 @@ export default function PhoneScreen() {
               <TextInput value={phone} onChangeText={setPhone} placeholder="98250 12345" keyboardType="phone-pad" maxLength={14} placeholderTextColor={T.inkFaint} style={{ flex: 1, fontSize: 17, color: T.ink }} />
             </View>
             {method === 'password' && (
-              <View style={{ marginTop: 12, borderWidth: 1, borderColor: T.line, borderRadius: T.r.md, paddingHorizontal: 14, height: 52, justifyContent: 'center' }}>
-                <TextInput value={password} onChangeText={setPassword} placeholder="Password" secureTextEntry placeholderTextColor={T.inkFaint} style={{ fontSize: 17, color: T.ink }} />
+              <View style={{ marginTop: 12, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: T.line, borderRadius: T.r.md, paddingHorizontal: 14, height: 52 }}>
+                <TextInput value={password} onChangeText={setPassword} placeholder="Password" secureTextEntry={!showPw} placeholderTextColor={T.inkFaint} style={{ flex: 1, fontSize: 17, color: T.ink }} />
+                <Pressable onPress={() => setShowPw((s) => !s)} hitSlop={10} style={{ padding: 4 }}>
+                  <Ionicons name={showPw ? 'eye-off-outline' : 'eye-outline'} size={22} color={T.inkFaint} />
+                </Pressable>
               </View>
             )}
             <Button label={method === 'password' ? 'Sign in' : 'Send OTP'} onPress={method === 'password' ? submitPassword : submitOtp} loading={loading} style={{ marginTop: 18 }} />
