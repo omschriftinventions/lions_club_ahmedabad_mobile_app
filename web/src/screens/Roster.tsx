@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { api } from '../lib/api';
+import { api, downloadFile } from '../lib/api';
+import { useAuth } from '../lib/auth';
 import { Avatar } from '../components/Avatar';
 import { Icon } from '../components/Icon';
 import { Spinner, EmptyState, Pill } from '../components/ui';
@@ -9,8 +10,16 @@ import type { Member } from '../types';
 
 export default function Roster() {
   const nav = useNavigate();
+  const { member } = useAuth();
   const [search, setSearch] = useState('');
   const [role, setRole] = useState('');
+  const [exporting, setExporting] = useState('');
+  const doExport = async (format: 'xlsx' | 'pdf') => {
+    setExporting(format);
+    try { await downloadFile(`/members/export?format=${format}`, `roster.${format}`); }
+    catch (e: any) { alert(e?.message || 'Export failed'); }
+    finally { setExporting(''); }
+  };
 
   const { data: rolesData } = useQuery({ queryKey: ['roles'], queryFn: () => api.get<{ roles: any[] }>('/members/meta/roles') });
   const roleChips = [{ code: '', label: 'All roles' }, ...(rolesData?.roles ?? [])];
@@ -29,6 +38,12 @@ export default function Roster() {
           <h1>Club Roster</h1>
           <div className="sub">{members.length} active member{members.length === 1 ? '' : 's'}</div>
         </div>
+        {member?.canEdit && (
+          <div className="btn-row">
+            <button className="btn outline" disabled={!!exporting} onClick={() => doExport('xlsx')}><Icon name="download" size={16} /> {exporting === 'xlsx' ? 'Exporting...' : 'Excel'}</button>
+            <button className="btn outline" disabled={!!exporting} onClick={() => doExport('pdf')}><Icon name="doc" size={16} /> {exporting === 'pdf' ? 'Exporting...' : 'PDF'}</button>
+          </div>
+        )}
       </div>
 
       <div className="card pad" style={{ marginBottom: 16 }}>
