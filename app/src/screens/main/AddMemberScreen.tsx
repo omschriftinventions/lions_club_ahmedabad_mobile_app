@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, TextInput, ScrollView, Pressable, Alert, Modal, FlatList } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
@@ -30,24 +30,43 @@ export default function AddMemberScreen() {
   const roles = rolesData?.roles ?? [];
 
   const [form, setForm] = useState<Record<string, string>>({
-    name: '', role: 'MEMBER', designation: '', profession: '', business: '',
-    area: '', phone: '', email: '', joined_year: '',
+    name: '', role: 'MEMBER', designation: '', alias: '', profession: '', business: '',
+    area: '', phone: '', email: '', joined_date: '',
   });
   const [sponsor, setSponsor] = useState<{ id: number; name: string } | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  const dirty = !saved && (Object.entries(form).some(([k, v]) => v !== '' && !(k === 'role' && v === 'MEMBER')) || sponsor != null);
+  const missing = !form.name.trim() || !form.joined_date.trim() || !form.phone.trim() || !sponsor;
+
+  // Confirm discard when leaving with unsaved changes.
+  useEffect(() => {
+    const sub = nav.addListener('beforeRemove', (e: any) => {
+      if (!dirty) return;
+      e.preventDefault();
+      Alert.alert('Discard changes?', 'You have unsaved changes.', [
+        { text: 'Keep editing', style: 'cancel' },
+        { text: 'Discard', style: 'destructive', onPress: () => nav.dispatch(e.data.action) },
+      ]);
+    });
+    return sub;
+  }, [nav, dirty]);
 
   const create = useMutation({
     mutationFn: () => {
       const body: any = { name: form.name, role: form.role };
-      for (const k of ['designation','profession','business','area','phone','email'] as const) {
+      for (const k of ['designation','alias','profession','business','area','phone','email'] as const) {
         if (form[k]?.trim()) body[k] = form[k].trim();
       }
-      if (form.joined_year && /^\d{4}$/.test(form.joined_year)) body.joined_year = Number(form.joined_year);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(form.joined_date)) body.joined_date = form.joined_date;
       if (sponsor) body.sponsor_id = sponsor.id;
       return api.post<{ id: number }>('/members', body);
     },
     onSuccess: () => {
+      setSaved(true);
       qc.invalidateQueries({ queryKey: ['members'] });
-      Alert.alert('Member added');
+      qc.invalidateQueries({ queryKey: ['roster', 'all'] });
+      Alert.alert('Success', `${form.name} added successfully. Login password is their phone number (last 10 digits).`);
       nav.goBack();
     },
     onError: (e: any) => Alert.alert('Failed', e.message),
@@ -63,17 +82,19 @@ export default function AddMemberScreen() {
         <Card>
           <Field label="Name *"   value={form.name}   onChange={(v: string) => setForm(s => ({ ...s, name: v }))} hint="Lion Full Name" />
           <RolePicker roles={roles} value={form.role} onChange={(v: string) => setForm(s => ({ ...s, role: v }))} />
+          <Field label="Alias / nickname" value={form.alias} onChange={(v: string) => setForm(s => ({ ...s, alias: v }))} />
           <Field label="Designation" value={form.designation} onChange={(v: string) => setForm(s => ({ ...s, designation: v }))} hint="PMJF / MJF / JF" />
+          <Field label="Joined date *" value={form.joined_date} onChange={(v: string) => setForm(s => ({ ...s, joined_date: v }))} hint="YYYY-MM-DD" />
           <Field label="Profession" value={form.profession} onChange={(v: string) => setForm(s => ({ ...s, profession: v }))} />
           <Field label="Business"   value={form.business}   onChange={(v: string) => setForm(s => ({ ...s, business: v }))} />
           <Field label="Area"       value={form.area}       onChange={(v: string) => setForm(s => ({ ...s, area: v }))} />
-          <Field label="Phone"      value={form.phone}      onChange={(v: string) => setForm(s => ({ ...s, phone: v }))} hint="+91 98250 12345" keyboard="phone-pad" />
+          <Field label="Phone *"    value={form.phone}      onChange={(v: string) => setForm(s => ({ ...s, phone: v }))} hint="+91 98250 12345" keyboard="phone-pad" />
           <Field label="Email"      value={form.email}      onChange={(v: string) => setForm(s => ({ ...s, email: v }))} keyboard="email-address" />
           <SponsorPicker value={sponsor} onChange={setSponsor} />
-          <Field label="Joined year" value={form.joined_year} onChange={(v: string) => setForm(s => ({ ...s, joined_year: v }))} keyboard="number-pad" />
           <Text style={{ color: T.inkFaint, fontSize: 12, marginTop: 2 }}>Login password is set automatically to the member's phone number (last 10 digits).</Text>
         </Card>
-        <Button label="Add Lion" variant="gold" onPress={() => create.mutate()} loading={create.isPending} style={{ marginTop: 16, marginBottom: 32 }} />
+        {missing && <Text style={{ color: T.danger, fontSize: 12, marginTop: 10 }}>Name, Joined date, Phone and Sponsor are required.</Text>}
+        <Button label="Add Lion" variant="gold" onPress={() => create.mutate()} loading={create.isPending} disabled={missing} style={{ marginTop: 16, marginBottom: 32 }} />
       </ScrollView>
     </Screen>
   );

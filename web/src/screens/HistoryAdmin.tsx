@@ -3,6 +3,7 @@ import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { Icon } from "../components/Icon";
 import { RichEditor } from "../components/RichEditor";
+import { useUnsavedGuard } from "../lib/useUnsavedGuard";
 
 // CMS editor for the History page. Published HTML is stored server-side and
 // shown to all members on the History page (web + mobile).
@@ -14,6 +15,9 @@ export default function HistoryAdmin() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ tone: "ok" | "err"; text: string } | null>(null);
+
+  const dirty = loadedHtml !== undefined && html !== loadedHtml;
+  useUnsavedGuard(dirty);
 
   useEffect(() => {
     (async () => {
@@ -36,7 +40,8 @@ export default function HistoryAdmin() {
     setMsg(null);
     try {
       await api.put("/content/history", { html });
-      setMsg({ tone: "ok", text: "Saved. Members now see the updated History page." });
+      setLoadedHtml(html);
+      setMsg({ tone: "ok", text: "History saved and published. All members now see the updated History page." });
     } catch (e: any) {
       setMsg({ tone: "err", text: "Save failed: " + (e?.message ?? "server not deployed yet") });
     } finally {

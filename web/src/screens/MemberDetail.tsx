@@ -37,7 +37,7 @@ export default function MemberDetail() {
         <div style={{ display: 'flex', gap: 18, alignItems: 'center', flexWrap: 'wrap' }}>
           <Avatar name={m.name} color={m.avatar_color} src={m.avatar_url} size="xl" />
           <div style={{ flex: 1, minWidth: 200 }}>
-            <h1 style={{ fontSize: 24 }}>{m.name}</h1>
+            <h1 style={{ fontSize: 24 }}>{m.name}{m.alias ? <span className="muted" style={{ fontSize: 16, fontWeight: 500 }}> “{m.alias}”</span> : null}</h1>
             {m.designation && <div className="muted" style={{ marginTop: 2 }}>{m.designation}</div>}
             <div style={{ marginTop: 10 }}>{m.role_label && <Pill tone="blue">{m.role_label}</Pill>}</div>
           </div>
@@ -51,7 +51,7 @@ export default function MemberDetail() {
           <Row icon="briefcase" label="Profession" value={m.profession} />
           <Row icon="briefcase" label="Business" value={m.business} />
           <Row icon="pin" label="Area" value={m.area} />
-          <Row icon="calendar" label="Joined" value={m.joined_year ? String(m.joined_year) : ''} />
+          <Row icon="calendar" label="Joined" value={m.joined_date ? new Date(m.joined_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : (m.joined_year ? String(m.joined_year) : '')} />
         </div>
         <div className="card pad">
           <div className="card-title">Contact</div>

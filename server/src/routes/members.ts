@@ -31,12 +31,12 @@ router.get('/', async (req: AuthedRequest, res) => {
   const where: string[] = ['m.club_id = :clubId', 'm.active = 1'];
   if (!q.include_admins) where.push('m.hidden = 0');
   const params: any = { clubId: req.user!.clubId, limit: q.limit };
-  if (q.search) { where.push('(m.name LIKE :s OR m.profession LIKE :s OR m.business LIKE :s OR m.area LIKE :s OR m.designation LIKE :s OR m.email LIKE :s OR m.phone LIKE :s OR r.label LIKE :s OR r.code LIKE :s)'); params.s = `%${q.search}%`; }
+  if (q.search) { where.push('(m.name LIKE :s OR m.alias LIKE :s OR m.profession LIKE :s OR m.business LIKE :s OR m.area LIKE :s OR m.designation LIKE :s OR m.email LIKE :s OR m.phone LIKE :s OR r.label LIKE :s OR r.code LIKE :s)'); params.s = `%${q.search}%`; }
   if (q.role)   { where.push('r.code = :role'); params.role = q.role; }
 
   const rows = await query<RowDataPacket[]>(
-    `SELECT m.id, m.name, m.initials, m.designation, m.profession, m.business, m.area,
-            m.phone, m.email, m.joined_year, m.dob, m.anniv, m.spouse, m.avatar_color, m.avatar_url,
+    `SELECT m.id, m.name, m.alias, m.initials, m.designation, m.profession, m.business, m.area,
+            m.phone, m.email, m.joined_year, m.joined_date, m.dob, m.anniv, m.spouse, m.avatar_color, m.avatar_url,
             r.code AS role, r.label AS role_label, r.color AS role_color
      FROM members m JOIN roles r ON r.id = m.role_id
      WHERE ${where.join(' AND ')}
@@ -113,8 +113,8 @@ router.get('/export', requireEditor, async (req: AuthedRequest, res) => {
   const params: any = { clubId: req.user!.clubId };
   if (q.id) { where.push('m.id = :id'); params.id = q.id; }
   const rows = await query<RowDataPacket[]>(
-    `SELECT m.name, r.label AS role_label, m.designation, m.profession, m.business, m.area,
-            m.phone, m.email, m.joined_year, m.dob, m.anniv, m.spouse, COALESCE(sp.name, m.sponsor) AS sponsor
+    `SELECT m.name, m.alias, r.label AS role_label, m.designation, m.profession, m.business, m.area,
+            m.phone, m.email, m.joined_year, DATE_FORMAT(m.joined_date,'%d-%m-%Y') AS joined_date, m.dob, m.anniv, m.spouse, COALESCE(sp.name, m.sponsor) AS sponsor
      FROM members m JOIN roles r ON r.id = m.role_id
      LEFT JOIN members sp ON sp.id = m.sponsor_id
      WHERE ${where.join(' AND ')} ORDER BY r.rank_order, m.name`,
@@ -122,9 +122,9 @@ router.get('/export', requireEditor, async (req: AuthedRequest, res) => {
   );
 
   const cols: [string, string][] = [
-    ['Name', 'name'], ['Position', 'role_label'], ['Designation', 'designation'],
+    ['Name', 'name'], ['Alias', 'alias'], ['Position', 'role_label'], ['Designation', 'designation'],
     ['Profession', 'profession'], ['Business', 'business'], ['Area', 'area'],
-    ['Phone', 'phone'], ['Email', 'email'], ['Joined', 'joined_year'],
+    ['Phone', 'phone'], ['Email', 'email'], ['Joined date', 'joined_date'], ['Joined year', 'joined_year'],
     ['Birthday', 'dob'], ['Anniversary', 'anniv'], ['Spouse', 'spouse'], ['Sponsor', 'sponsor'],
   ];
   const fnameBase = q.id ? (String(rows[0]?.name || 'member').replace(/[^a-z0-9]+/gi, '_')) : 'roster';
@@ -171,7 +171,7 @@ router.get('/:id', async (req: AuthedRequest, res) => {
   const id = z.coerce.number().int().parse(req.params.id);
   const rows = await query<RowDataPacket[]>(
     `SELECT m.id, m.name, m.initials, m.designation, m.profession, m.business, m.area,
-            m.phone, m.email, m.joined_year, m.dob, m.anniv, m.spouse, m.sponsor, m.sponsor_id, sp.name AS sponsor_name, m.avatar_color, m.avatar_url, m.bio, m.expertise, m.goals, m.accomplishments, m.interests, m.network, m.social,
+            m.phone, m.email, m.joined_year, m.joined_date, m.alias, m.dob, m.anniv, m.spouse, m.sponsor, m.sponsor_id, sp.name AS sponsor_name, m.avatar_color, m.avatar_url, m.bio, m.expertise, m.goals, m.accomplishments, m.interests, m.network, m.social,
             r.code AS role, r.label AS role_label, r.color AS role_color
      FROM members m JOIN roles r ON r.id = m.role_id
      LEFT JOIN members sp ON sp.id = m.sponsor_id
@@ -197,6 +197,8 @@ const upsertSchema = z.object({
   phone_e164: blank(z.string().max(20).nullable()).optional(),
   email: blank(z.string().email().max(160).nullable()).optional(),
   joined_year: blank(z.coerce.number().int().nullable()).optional(),
+  joined_date: blank(z.string().max(20).nullable()).optional(),
+  alias: blank(z.string().max(120).nullable()).optional(),
   dob: blank(z.string().max(20).nullable()).optional(),
   anniv: blank(z.string().max(20).nullable()).optional(),
   spouse: blank(z.string().max(120).nullable()).optional(),
@@ -224,9 +226,9 @@ router.post('/', requireEditor, async (req: AuthedRequest, res) => {
   let result;
   try {
     result = await exec(
-      `INSERT INTO members (club_id, role_id, name, initials, designation, profession, business, area, phone, phone_e164, email, joined_year, dob, anniv, spouse, sponsor, sponsor_id, avatar_color, bio, password_hash)
-       VALUES (:clubId, :roleId, :name, :initials, :designation, :profession, :business, :area, :phone, :phone_e164, :email, :joined_year, :dob, :anniv, :spouse, :sponsor, :sponsor_id, :avatar_color, :bio, :password_hash)`,
-      { spouse: null, sponsor: null, sponsor_id: null, dob: null, anniv: null, avatar_color: null, bio: null, ...data, clubId: req.user!.clubId, roleId: role[0].id, initials, password_hash }
+      `INSERT INTO members (club_id, role_id, name, initials, designation, profession, business, area, phone, phone_e164, email, joined_year, joined_date, alias, dob, anniv, spouse, sponsor, sponsor_id, avatar_color, bio, password_hash)
+       VALUES (:clubId, :roleId, :name, :initials, :designation, :profession, :business, :area, :phone, :phone_e164, :email, :joined_year, :joined_date, :alias, :dob, :anniv, :spouse, :sponsor, :sponsor_id, :avatar_color, :bio, :password_hash)`,
+      { spouse: null, sponsor: null, sponsor_id: null, dob: null, anniv: null, joined_year: null, joined_date: null, alias: null, avatar_color: null, bio: null, ...data, clubId: req.user!.clubId, roleId: role[0].id, initials, password_hash }
     );
   } catch (e: any) {
     if (e?.code === 'ER_DUP_ENTRY') throw new HttpError(409, 'A member with this phone number already exists.', 'phone_exists');
@@ -248,7 +250,9 @@ router.patch('/:id', async (req: AuthedRequest, res) => {
     if (role.length === 0) throw new HttpError(400, 'invalid_role');
     sets.push('role_id = :roleId'); params.roleId = role[0].id;
   }
-  for (const k of ['name','designation','profession','business','area','phone','phone_e164','email','joined_year','dob','anniv','spouse','sponsor','sponsor_id','avatar_color','bio','expertise','goals','accomplishments','interests','network','social'] as const) {
+  for (const k of ['name','designation','profession','business','area','phone','phone_e164','email','joined_year','joined_date','alias','dob','anniv','spouse','sponsor','sponsor_id','avatar_color','bio','expertise','goals','accomplishments','interests','network','social'] as const) {
+    // Designation is a club honour — only admins/super admins may change it.
+    if (k === 'designation' && !req.user!.canEdit) continue;
     if (k in data) { sets.push(`${k} = :${k}`); params[k] = k === 'phone_e164' && (data as any)[k] ? canonE164((data as any)[k]) : (data as any)[k]; }
   }
   if (sets.length === 0) return res.json({ ok: true });

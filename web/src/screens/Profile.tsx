@@ -111,8 +111,10 @@ export default function Profile() {
 }
 
 const EditModal: React.FC<{ member: Member; onClose: () => void; onSave: (b: any) => void; saving: boolean; error?: any }> = ({ member, onClose, onSave, saving, error }) => {
+  const { member: authMember } = useAuth();
+  const canDesig = !!authMember?.canEdit; // designation is admin-managed
   const [f, setF] = useState({
-    name: member.name ?? '', designation: member.designation ?? '', profession: member.profession ?? '',
+    name: member.name ?? '', designation: member.designation ?? '', alias: member.alias ?? '', profession: member.profession ?? '',
     business: member.business ?? '', area: member.area ?? '', phone: member.phone ?? '',
     email: member.email ?? '', bio: member.bio ?? '', dob: member.dob ?? '', anniv: member.anniv ?? '', spouse: member.spouse ?? '', expertise: member.expertise ?? '', goals: member.goals ?? '', accomplishments: member.accomplishments ?? '', interests: member.interests ?? '', network: member.network ?? '', social: member.social ?? '',
   });
@@ -166,9 +168,13 @@ const EditModal: React.FC<{ member: Member; onClose: () => void; onSave: (b: any
           </div>
         </div>
         {I('name', 'Full name')}
-        <div className="row-2">{I('designation', 'Designation')}{I('profession', 'Profession')}</div>
-        <div className="row-2">{I('business', 'Business')}{I('area', 'Area')}</div>
-        <div className="row-2">{I('phone', 'Phone')}{I('email', 'Email')}</div>
+        <div className="row-2">{I('alias', 'Alias / nickname')}{I('profession', 'Profession')}</div>
+        <div className="row-2">
+          <Field label="Designation">{canDesig ? <input className="input" value={f.designation} onChange={set('designation')} /> : <input className="input" value={f.designation} disabled title="Only an admin can change your designation" />}</Field>
+          {I('business', 'Business')}
+        </div>
+        <div className="row-2">{I('area', 'Area')}{I('phone', 'Phone')}</div>
+        {I('email', 'Email')}
         {I('bio', 'Bio', { area: true })}
         <div className="row-2">{I('dob', 'Birthday (e.g. Mar 14)')}{I('anniv', 'Anniversary')}</div>
         {I('spouse', 'Spouse')}

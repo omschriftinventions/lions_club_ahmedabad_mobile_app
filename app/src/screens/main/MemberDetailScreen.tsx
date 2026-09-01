@@ -58,7 +58,8 @@ export default function MemberDetailScreen() {
           <Row icon="mail" label="Email" value={m.email} />
         </Card>
         <Card>
-          <Row icon="calendar" label="Joined" value={m.joined_year ? String(m.joined_year) : null} />
+          <Row icon="calendar" label="Joined" value={m.joined_date ? new Date(m.joined_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : (m.joined_year ? String(m.joined_year) : null)} />
+          <Row icon="pricetag" label="Alias" value={m.alias} />
           <Row icon="gift" label="Birthday" value={m.dob} />
           <Row icon="heart" label="Anniversary" value={m.anniv} />
           <Row icon="people" label="Spouse" value={m.spouse} />

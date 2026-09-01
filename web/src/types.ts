@@ -20,6 +20,8 @@ export interface Member {
   dob?: string | null;
   anniv?: string | null;
   spouse?: string | null;
+  alias?: string | null;
+  joined_date?: string | null;
   sponsor?: string | null;
   sponsor_id?: number | null;
   sponsor_name?: string | null;

@@ -13,6 +13,7 @@ import { useAuth } from '../../lib/auth';
 import { T } from '../../theme/tokens';
 
 const FIELDS: { key: string; label: string; keyboard?: any; multiline?: boolean }[] = [
+  { key: 'alias',      label: 'Alias / nickname' },
   { key: 'profession', label: 'Profession' },
   { key: 'business',   label: 'Business' },
   { key: 'area',       label: 'Area' },

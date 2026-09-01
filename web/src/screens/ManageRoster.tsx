@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, downloadFile } from '../lib/api';
@@ -15,6 +15,7 @@ export default function ManageRoster() {
   const { member } = useAuth();
   const [manageFor, setManageFor] = useState<any | null>(null);
   const [showSponsors, setShowSponsors] = useState(false);
+  const [q, setQ] = useState('');
 
   const { data, isLoading } = useQuery({ queryKey: ['roster', 'all'], queryFn: () => api.get<{ members: any[] }>('/members?limit=500') });
   const deact = useMutation({ mutationFn: (id: number) => api.delete(`/members/${id}`), onSuccess: () => qc.invalidateQueries({ queryKey: ['roster'] }) });
@@ -30,7 +31,11 @@ export default function ManageRoster() {
   };
 
   if (!member?.canEdit) return <div className="card pad"><div className="empty"><div className="ic"><Icon name="users" size={38} /></div><div style={{ fontWeight: 700 }}>Officer access required</div></div></div>;
-  const list = data?.members ?? [];
+  const all = data?.members ?? [];
+  const lc = q.trim().toLowerCase();
+  const list = [...all]
+    .filter((m) => !lc || [m.name, m.alias, m.phone, m.role_label, m.profession, m.business, m.area].some((v: any) => v?.toLowerCase?.().includes(lc)))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <>
@@ -41,6 +46,12 @@ export default function ManageRoster() {
           <button className="btn outline" disabled={!!exporting} onClick={() => doExport('xlsx')}><Icon name="download" size={16} /> {exporting === 'xlsx-all' ? 'Exporting...' : 'Excel'}</button>
           <button className="btn outline" disabled={!!exporting} onClick={() => doExport('pdf')}><Icon name="doc" size={16} /> {exporting === 'pdf-all' ? 'Exporting...' : 'PDF'}</button>
           <button className="btn primary" onClick={() => nav('/add-member')}><Icon name="plus" size={16} /> Add member</button>
+        </div>
+      </div>
+      <div className="card pad" style={{ marginBottom: 12 }}>
+        <div style={{ position: 'relative' }}>
+          <span style={{ position: 'absolute', left: 12, top: 11, color: 'var(--faint)' }}><Icon name="search" size={18} /></span>
+          <input className="input" style={{ paddingLeft: 38 }} placeholder="Search name, alias, phone, role..." value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
       </div>
       {isLoading ? <Spinner /> : list.length === 0 ? <EmptyState icon="users" title="No members" /> : (
@@ -56,7 +67,7 @@ export default function ManageRoster() {
                   <td>
                     <div className="btn-row" style={{ justifyContent: 'flex-end' }}>
                       <button className="btn ghost sm" title="Export this member (PDF)" disabled={!!exporting} onClick={() => doExport('pdf', m.id, m.name)}><Icon name="download" size={15} /></button>
-                      {member?.superAdmin && (
+                      {member?.canEdit && (
                         <button className="btn ghost sm" title="Manage member" onClick={() => setManageFor(m)}><Icon name="settings" size={15} /></button>
                       )}
                       <button className="btn ghost sm" title="Deactivate" onClick={() => { if (confirm(`Remove ${m.name}? (deactivates, keeps history)`)) deact.mutate(m.id); }}><Icon name="trash" size={15} /></button>
@@ -105,7 +116,7 @@ const ManageMemberModal: React.FC<{ member: any; onClose: () => void }> = ({ mem
     designation: member.designation ?? '', profession: member.profession ?? '',
     business: member.business ?? '', area: member.area ?? '',
     phone: member.phone ?? '', email: member.email ?? '',
-    joined_year: member.joined_year ? String(member.joined_year) : '',
+    joined_date: '', alias: member.alias ?? '',
     dob: member.dob ?? '', anniv: member.anniv ?? '', spouse: member.spouse ?? '',
     bio: member.bio ?? '', expertise: member.expertise ?? '', goals: member.goals ?? '',
     accomplishments: member.accomplishments ?? '', interests: member.interests ?? '',
@@ -113,13 +124,30 @@ const ManageMemberModal: React.FC<{ member: any; onClose: () => void }> = ({ mem
   });
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => setF({ ...f, [k]: e.target.value });
 
+  // Roster list rows are partial (no sponsor/e-gains) — fetch full detail to seed the form.
+  const { data: detail } = useQuery({ queryKey: ['member', member.id], queryFn: () => api.get<{ member: any }>(`/members/${member.id}`) });
+  useEffect(() => {
+    const d = detail?.member; if (!d) return;
+    setSponsorId(d.sponsor_id ?? null);
+    setF((p) => ({
+      ...p,
+      name: d.name ?? p.name, role: d.role ?? p.role,
+      designation: d.designation ?? '', profession: d.profession ?? '', business: d.business ?? '', area: d.area ?? '',
+      phone: d.phone ?? '', email: d.email ?? '', alias: d.alias ?? '',
+      joined_date: d.joined_date ? String(d.joined_date).slice(0, 10) : '',
+      dob: d.dob ?? '', anniv: d.anniv ?? '', spouse: d.spouse ?? '',
+      bio: d.bio ?? '', expertise: d.expertise ?? '', goals: d.goals ?? '',
+      accomplishments: d.accomplishments ?? '', interests: d.interests ?? '', network: d.network ?? '', social: d.social ?? '',
+    }));
+  }, [detail]);
+
   const saveDetails = useMutation({
     mutationFn: () => api.patch(`/members/${member.id}`, {
       name: f.name, role: f.role,
       designation: f.designation || null, profession: f.profession || null,
       business: f.business || null, area: f.area || null,
       phone: f.phone || null, phone_e164: f.phone || null, email: f.email || null,
-      joined_year: f.joined_year && /^\d{4}$/.test(f.joined_year) ? Number(f.joined_year) : null,
+      joined_date: f.joined_date || null, alias: f.alias || null,
       dob: f.dob || null, anniv: f.anniv || null, spouse: f.spouse || null, sponsor_id: sponsorId,
       bio: f.bio || null, expertise: f.expertise || null, goals: f.goals || null,
       accomplishments: f.accomplishments || null, interests: f.interests || null,
@@ -175,8 +203,9 @@ const ManageMemberModal: React.FC<{ member: any; onClose: () => void }> = ({ mem
       </div>
       <div className="row-2">
         <Field label="Designation"><input className="input" value={f.designation} onChange={set('designation')} placeholder="PMJF / MJF" /></Field>
-        <Field label="Joined year"><input className="input" value={f.joined_year} onChange={set('joined_year')} placeholder="2015" /></Field>
+        <Field label="Joined date"><input className="input" type="date" value={f.joined_date} onChange={set('joined_date')} /></Field>
       </div>
+      <Field label="Alias / nickname"><input className="input" value={f.alias} onChange={set('alias')} /></Field>
       <div className="row-2">
         <Field label="Profession"><input className="input" value={f.profession} onChange={set('profession')} /></Field>
         <Field label="Business"><input className="input" value={f.business} onChange={set('business')} /></Field>
