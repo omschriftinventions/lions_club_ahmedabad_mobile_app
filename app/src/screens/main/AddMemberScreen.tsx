@@ -122,7 +122,7 @@ const SponsorPicker = ({ value, onChange }: { value: { id: number; name: string 
   const [q, setQ] = useState('');
   const { data } = useQuery({ queryKey: ['roster', 'all'], queryFn: () => api.get<{ members: any[] }>('/members?limit=500') });
   const members = data?.members ?? [];
-  const filtered = useMemo(() => members.filter((m) => m.name.toLowerCase().includes(q.toLowerCase())).slice(0, 40), [members, q]);
+  const filtered = useMemo(() => members.filter((m) => m.name.toLowerCase().includes(q.toLowerCase())), [members, q]);
   return (
     <View style={{ marginBottom: 12 }}>
       <Text style={{ color: T.inkMute, fontSize: 11, letterSpacing: 0.5, marginBottom: 4 }}>SPONSOR (MEMBER)</Text>

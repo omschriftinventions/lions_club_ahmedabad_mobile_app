@@ -17,7 +17,7 @@ export const MemberSelect: React.FC<{
 
   const selected = members.find((m) => m.id === value);
   const filtered = useMemo(
-    () => members.filter((m) => m.id !== excludeId && m.name.toLowerCase().includes(q.toLowerCase())).slice(0, 30),
+    () => members.filter((m) => m.id !== excludeId && m.name.toLowerCase().includes(q.toLowerCase())),
     [members, q, excludeId]
   );
 
@@ -37,7 +37,7 @@ export const MemberSelect: React.FC<{
       ) : (
         <input className="input" value={q} onChange={(e) => { setQ(e.target.value); setOpen(true); }} onFocus={() => setOpen(true)} placeholder={placeholder} />
       )}
-      {open && !selected && q && (
+      {open && !selected && (
         <div style={{ position: 'absolute', zIndex: 20, top: '100%', left: 0, right: 0, background: 'var(--card,#fff)', border: '1px solid var(--line,#e5e7eb)', borderRadius: 8, marginTop: 4, maxHeight: 240, overflowY: 'auto', boxShadow: '0 6px 20px rgba(0,0,0,.12)' }}>
           {filtered.length === 0 ? (
             <div className="muted" style={{ padding: 10, fontSize: 13 }}>No match</div>
